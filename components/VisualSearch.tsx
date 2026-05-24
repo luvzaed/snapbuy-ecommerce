@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   RefreshCw,
 } from "lucide-react";
+import Link from "next/link";
+import { Product } from "@/lib/types";
 
 interface VisualSearchProps {
   onClose: () => void;
@@ -19,11 +21,14 @@ interface VisualSearchProps {
 
 type Tab = "upload" | "camera";
 type SearchState = "idle" | "searching" | "done";
+type Match = Product & { similarity: number };
 
 export default function VisualSearch({ onClose }: VisualSearchProps) {
   const [tab, setTab] = useState<Tab>("upload");
   const [preview, setPreview] = useState<string | null>(null);
   const [searchState, setSearchState] = useState<SearchState>("idle");
+  const [results, setResults] = useState<Match[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -97,17 +102,33 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
     reader.readAsDataURL(file);
   };
 
-  /* ── mock search ── */
+  /* ── real search: send the image to the Python CLIP server via our API ── */
   const handleSearch = async () => {
     if (!preview) return;
     setSearchState("searching");
-    await new Promise((r) => setTimeout(r, 2200));
-    setSearchState("done");
+    setError(null);
+    setResults([]);
+    try {
+      const res = await fetch("/api/visual-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: preview }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Visual search failed.");
+      setResults((data.products ?? []).filter((p: Match) => p && p.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Visual search failed.");
+    } finally {
+      setSearchState("done");
+    }
   };
 
   const reset = () => {
     setPreview(null);
     setSearchState("idle");
+    setResults([]);
+    setError(null);
   };
 
   return (
@@ -192,8 +213,11 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                     <PreviewSection
                       preview={preview}
                       searchState={searchState}
+                      results={results}
+                      error={error}
                       onSearch={handleSearch}
                       onReset={reset}
+                      onClose={onClose}
                     />
                   )}
                 </div>
@@ -269,8 +293,11 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                       <PreviewSection
                         preview={preview}
                         searchState={searchState}
+                        results={results}
+                        error={error}
                         onSearch={handleSearch}
                         onReset={reset}
+                        onClose={onClose}
                       />
                     </div>
                   )}
@@ -288,13 +315,19 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
 function PreviewSection({
   preview,
   searchState,
+  results,
+  error,
   onSearch,
   onReset,
+  onClose,
 }: {
   preview: string;
   searchState: SearchState;
+  results: Match[];
+  error: string | null;
   onSearch: () => void;
   onReset: () => void;
+  onClose: () => void;
 }) {
   return (
     <div>
@@ -327,10 +360,52 @@ function PreviewSection({
 
       {searchState === "done" && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm font-medium">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-            Found 6 similar products! (demo result)
-          </div>
+          {error ? (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm font-medium">
+              <X className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </div>
+          ) : results.length === 0 ? (
+            <div className="px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-slate-300 text-sm font-medium text-center">
+              No similar products found. Try another image.
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm font-medium">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                Found {results.length} similar product{results.length === 1 ? "" : "s"}
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {results.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/product/${p.id}`}
+                    onClick={onClose}
+                    className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:border-cyan-500/40 hover:bg-cyan-500/[0.05] transition-all group"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-white/5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate group-hover:text-cyan-300 transition-colors">
+                        {p.name}
+                      </p>
+                      <p className="text-slate-500 text-xs truncate">{p.category}</p>
+                      <p className="text-cyan-400 text-sm font-semibold mt-0.5">
+                        ${Number(p.price).toFixed(2)}
+                      </p>
+                    </div>
+                    <span className="flex-shrink-0 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-semibold">
+                      {Math.round(p.similarity)}% match
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
           <button
             onClick={onReset}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl glass-light text-slate-400 hover:text-white text-sm transition-all"
