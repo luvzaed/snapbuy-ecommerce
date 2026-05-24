@@ -23,18 +23,18 @@ export default function FormInput({
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      <label htmlFor={id} className="text-sm font-medium text-slate-300">
+      <label htmlFor={id} className="text-sm font-medium text-slate-600 dark:text-slate-300">
         {label}
       </label>
       <div className="relative">
         <input
           id={id}
           type={inputType}
-          className={`w-full bg-white/5 border ${
+          className={`w-full bg-slate-50 dark:bg-white/5 border ${
             error
               ? 'border-red-500/50 focus:border-red-500'
-              : 'border-white/10 focus:border-cyan-500/50'
-          } rounded-xl py-2.5 pl-4 pr-11 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${
+              : 'border-slate-200 dark:border-white/10 focus:border-cyan-500/50'
+          } rounded-xl py-2.5 pl-4 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 ${
             error ? 'focus:ring-red-500/50' : 'focus:ring-cyan-500/50'
           } transition-all`}
           {...props}

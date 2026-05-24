@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -12,14 +12,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const product = await prisma.product.findUnique({
       where: { id: Number(id) },
     });
-    if (!product)
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(product);
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to fetch product' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
   }
 }
 
@@ -33,9 +29,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       where: { id: Number(id) },
       data: {
         ...(body.name !== undefined && { name: body.name }),
-        ...(body.description !== undefined && {
-          description: body.description,
-        }),
+        ...(body.description !== undefined && { description: body.description }),
         ...(body.price !== undefined && { price: Number(body.price) }),
         ...(body.image !== undefined && { image: body.image }),
         ...(body.category !== undefined && { category: body.category }),
@@ -45,10 +39,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     return NextResponse.json(updated);
   } catch {
-    return NextResponse.json(
-      { error: 'Not found or update failed' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Not found or update failed" }, { status: 404 });
   }
 }
 
@@ -61,9 +52,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     });
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json(
-      { error: 'Not found or delete failed' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Not found or delete failed" }, { status: 404 });
   }
 }

@@ -23,9 +23,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.id}`} className="block">
-      <div className="group relative bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-cyan-300 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10">
+      <div className="group relative bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10">
         {/* Image container */}
-        <div className="relative h-52 overflow-hidden bg-slate-50">
+        <div className="relative h-52 overflow-hidden bg-slate-50 dark:bg-slate-800">
           <img
             src={product.image}
             alt={product.name}
@@ -35,13 +35,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
 
           {/* Category badge */}
-          <span className="absolute top-3 left-3 px-2.5 py-1 text-xs bg-white/90 backdrop-blur-md text-cyan-700 font-bold rounded-lg border border-cyan-100 shadow-sm">
+          <span className="absolute top-3 left-3 px-2.5 py-1 text-xs bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-cyan-700 dark:text-cyan-400 font-bold rounded-lg border border-cyan-100 dark:border-cyan-800 shadow-sm">
             {product.category}
           </span>
 
           {/* Price tag floating */}
-          <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm">
-            <span className="text-slate-900 font-bold text-sm">
+          <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm">
+            <span className="text-slate-900 dark:text-white font-bold text-sm">
               ${product.price.toFixed(2)}
             </span>
           </div>
@@ -60,15 +60,15 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Product name */}
-          <h3 className="text-slate-900 font-bold text-base mb-1.5 group-hover:text-cyan-600 transition-colors duration-200 leading-snug">
+          <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1.5 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-200 leading-snug">
             {product.name}
           </h3>
-          <p className="text-slate-500 text-sm mb-5 line-clamp-2 leading-relaxed">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-5 line-clamp-2 leading-relaxed">
             {product.description}
           </p>
 
           {/* Footer */}
-          <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4 mt-auto">
+          <div className="flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4 mt-auto">
             <div>
               <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
                 ${product.price.toFixed(2)}

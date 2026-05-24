@@ -5,7 +5,6 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   ShoppingCart,
-  Zap,
   Menu,
   X,
   ScanSearch,
@@ -16,9 +15,11 @@ import {
   Package,
   LayoutDashboard,
   LogOut,
+  Shield,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import VisualSearch from '@/components/VisualSearch';
+import ThemeToggle from '@/components/ThemeToggle';
 import toast from 'react-hot-toast';
 
 export default function Header() {
@@ -57,7 +58,6 @@ export default function Header() {
     logout();
     setUserMenuOpen(false);
 
-    // Show success toast notification for logout
     toast.success('Successfully logged out!');
 
     router.push('/');
@@ -66,7 +66,9 @@ export default function Header() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery);
+      router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setMenuOpen(false);
     }
   };
 
@@ -85,77 +87,76 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'glass border-b border-white/[0.07] shadow-2xl shadow-black/40'
+      className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
+          ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm'
           : 'bg-transparent border-b border-transparent'
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-6">
+          {/* Logo */}
           <Link
             href="/"
             onClick={handleHomeClick}
             className="flex items-center gap-2.5 group shrink-0 cursor-pointer"
           >
-            <div className="relative w-8 h-8 rounded-xl gradient-brand flex items-center justify-center animate-pulse-glow">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
             <span className="text-xl font-bold tracking-tight">
               <span className="text-gradient">Snap</span>
-              <span className="text-white">Buy</span>
+              <span className="text-slate-900 dark:text-white">Buy</span>
             </span>
           </Link>
 
+          {/* Desktop Search */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-auto">
             <form
               onSubmit={handleSearchSubmit}
               className="relative w-full group"
             >
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                <Search className="h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-cyan-500 transition-colors" />
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-11 pr-12 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full py-2.5 pl-11 pr-12 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 focus:bg-white dark:focus:bg-slate-800 focus:ring-1 focus:ring-cyan-500/50 transition-all shadow-inner"
               />
               <button
                 type="button"
                 onClick={() => setVsOpen(true)}
                 title="Visual Search with AI"
-                className="absolute inset-y-0 right-1.5 my-1.5 px-2.5 flex items-center bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-full transition-all border border-cyan-500/20"
+                className="absolute inset-y-0 right-1.5 my-1.5 px-2.5 flex items-center bg-cyan-50 dark:bg-cyan-900/30 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400 rounded-full transition-all border border-cyan-100 dark:border-cyan-800"
               >
                 <ScanSearch className="h-4 w-4" />
               </button>
             </form>
           </div>
 
+          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1 shrink-0">
             <Link
               href="/"
               onClick={handleHomeClick}
-              className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all duration-200 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 cursor-pointer font-medium"
             >
               Home
             </Link>
             <Link
               href="/shop"
-              className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+              className="px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 font-medium"
             >
               Shop
             </Link>
 
+            {/* User Dropdown */}
             <div className="relative ml-1" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className={`flex items-center gap-1 p-2.5 rounded-xl glass-light transition-all duration-200 ${
-                  userMenuOpen || user
-                    ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-400'
-                    : 'text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30'
-                }`}
+                className={`flex items-center gap-1 p-2.5 rounded-xl border transition-all duration-200 ${userMenuOpen || user
+                    ? 'border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-200 dark:hover:border-cyan-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm'
+                  }`}
               >
                 <User className="w-5 h-5" />
                 <ChevronDown
@@ -164,31 +165,31 @@ export default function Header() {
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 glass border border-white/[0.08] rounded-2xl p-1.5 shadow-2xl animate-fade-in-up">
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-1.5 shadow-xl animate-fade-in-up">
                   {!user ? (
                     <>
                       <Link
                         href="/login"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                        className="flex items-center px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                       >
                         Log In
                       </Link>
                       <Link
                         href="/register"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                        className="flex items-center px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                       >
                         Sign In
                       </Link>
                     </>
                   ) : (
                     <>
-                      <div className="px-4 py-3 mb-1 border-b border-white/[0.05]">
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-0.5">
+                      <div className="px-4 py-3 mb-1 border-b border-slate-100 dark:border-slate-700">
+                        <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">
                           Signed in as
                         </p>
-                        <p className="text-sm text-white font-medium truncate">
+                        <p className="text-sm text-slate-900 dark:text-slate-100 font-bold truncate">
                           {user.email}
                         </p>
                       </div>
@@ -197,35 +198,46 @@ export default function Header() {
                         <Link
                           href="/profile"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                         >
-                          <UserCircle className="w-4 h-4 text-cyan-400" />
+                          <UserCircle className="w-4 h-4 text-cyan-500" />
                           Profile
                         </Link>
 
                         <Link
                           href="/orders"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:text-cyan-600 hover:bg-slate-50 transition-all font-medium"
                         >
-                          <Package className="w-4 h-4 text-cyan-400" />
+                          <Package className="w-4 h-4 text-cyan-500" />
                           My Orders
                         </Link>
 
                         <Link
                           href="/dashboard"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:text-cyan-600 hover:bg-slate-50 transition-all font-medium"
                         >
-                          <LayoutDashboard className="w-4 h-4 text-cyan-400" />
+                          <LayoutDashboard className="w-4 h-4 text-cyan-500" />
                           Dashboard
                         </Link>
+
+                        {user.role === 'admin' && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all font-medium"
+                          >
+                            <Shield className="w-4 h-4 text-amber-500" />
+                            Admin Panel
+                          </Link>
+                        )}
                       </div>
 
-                      <div className="border-t border-white/[0.05] pt-1">
+                      <div className="border-t border-slate-100 dark:border-slate-700 pt-1">
                         <button
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all font-medium"
                         >
                           <LogOut className="w-4 h-4" />
                           Logout
@@ -237,39 +249,45 @@ export default function Header() {
               )}
             </div>
 
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
+            {/* Cart Button */}
             <Link
               href="/cart"
-              className="relative ml-1 p-2.5 rounded-xl glass-light hover:border-cyan-500/30 hover:bg-cyan-500/10 text-slate-400 hover:text-cyan-400 transition-all duration-200"
+              className="relative ml-1 p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:border-cyan-200 dark:hover:border-cyan-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all duration-200"
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 gradient-brand rounded-full text-[10px] flex items-center justify-center text-white font-bold shadow-lg">
+                <span className="absolute -top-1 -right-1 w-4 h-4 gradient-brand rounded-full text-[10px] flex items-center justify-center text-white font-bold shadow-sm">
                   {cartCount}
                 </span>
               )}
             </Link>
           </nav>
 
+          {/* Mobile Actions */}
           <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
             <button
               onClick={() => setVsOpen(true)}
-              className="p-2 text-slate-400 hover:text-cyan-400 transition-colors"
+              className="p-2 text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             >
               <ScanSearch className="w-5 h-5" />
             </button>
             <Link
               href="/cart"
-              className="relative p-2 text-slate-400 hover:text-white"
+              className="relative p-2 text-slate-600 hover:text-cyan-600"
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 gradient-brand rounded-full text-[10px] flex items-center justify-center text-white font-bold">
+                <span className="absolute 1 top-0 right-0 w-4 h-4 gradient-brand rounded-full text-[10px] flex items-center justify-center text-white font-bold">
                   {cartCount}
                 </span>
               )}
             </Link>
             <button
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+              className="p-2 rounded-lg text-slate-600 hover:text-cyan-600 hover:bg-slate-100 transition-all"
               onClick={() => setMenuOpen(!menuOpen)}
             >
               {menuOpen ? (
@@ -281,33 +299,34 @@ export default function Header() {
           </div>
         </div>
 
+        {/* Mobile Menu Expanded */}
         {menuOpen && (
-          <div className="md:hidden pb-6 flex flex-col gap-1 animate-fade-in-up border-t border-white/[0.07] pt-4 mt-1">
+          <div className="md:hidden pb-6 flex flex-col gap-1 animate-fade-in-up border-t border-slate-200 dark:border-slate-700 pt-4 mt-1 bg-white dark:bg-slate-900">
             <div className="px-3 pb-3">
               <form onSubmit={handleSearchSubmit} className="relative w-full">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-slate-500" />
+                  <Search className="h-4 w-4 text-slate-400" />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:bg-white shadow-inner"
                 />
               </form>
             </div>
             <Link
               href="/"
               onClick={handleHomeClick}
-              className="px-3 py-3 rounded-xl text-base text-slate-400 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+              className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 cursor-pointer font-medium"
             >
               Home
             </Link>
             <Link
               href="/shop"
               onClick={() => setMenuOpen(false)}
-              className="px-3 py-3 rounded-xl text-base text-slate-400 hover:text-white hover:bg-white/[0.06]"
+              className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 font-medium"
             >
               Shop
             </Link>
@@ -316,14 +335,14 @@ export default function Header() {
               <>
                 <Link
                   href="/login"
-                  className="px-3 py-3 rounded-xl text-base text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                  className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                   onClick={() => setMenuOpen(false)}
                 >
                   Log In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3 py-3 rounded-xl text-base text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                  className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                   onClick={() => setMenuOpen(false)}
                 >
                   Sign In
@@ -331,38 +350,48 @@ export default function Header() {
               </>
             ) : (
               <>
-                <div className="px-3 py-2 mt-2 border-t border-white/[0.05]">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">
+                <div className="px-3 py-2 mt-2 border-t border-slate-100">
+                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-2 font-bold">
                     My Account
                   </p>
                   <Link
                     href="/profile"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <UserCircle className="w-5 h-5 text-cyan-400" /> Profile
+                    <UserCircle className="w-5 h-5 text-cyan-500" /> Profile
                   </Link>
                   <Link
                     href="/orders"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Package className="w-5 h-5 text-cyan-400" /> My Orders
+                    <Package className="w-5 h-5 text-cyan-500" /> My Orders
                   </Link>
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <LayoutDashboard className="w-5 h-5 text-cyan-400" />{' '}
-                    Dashboard
+                    <LayoutDashboard className="w-5 h-5 text-cyan-500" /> Dashboard
                   </Link>
+
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 font-medium"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <Shield className="w-5 h-5 text-amber-500" /> Admin Panel
+                    </Link>
+                  )}
+
                   <button
                     onClick={() => {
                       handleLogout();
                       setMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-red-400 hover:bg-red-500/10 mt-1"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-red-600 hover:bg-red-50 mt-1 font-medium"
                   >
                     <LogOut className="w-5 h-5" /> Logout
                   </button>

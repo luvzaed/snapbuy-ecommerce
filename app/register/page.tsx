@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FormInput from '@/components/FormInput';
 import Link from 'next/link';
-import { UserPlus, Zap } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,13 +21,9 @@ export default function RegisterPage() {
   const calculateStrength = (pass: string) => {
     let score = 0;
     if (!pass) return 0;
-    // Minimum 8 characters
     if (pass.length >= 8) score += 1;
-    // Contains both lowercase and uppercase letters
     if (/[a-z]/.test(pass) && /[A-Z]/.test(pass)) score += 1;
-    // Contains at least one number
     if (/\d/.test(pass)) score += 1;
-    // Contains at least one special character
     if (/[^a-zA-Z0-9]/.test(pass)) score += 1;
     return score;
   };
@@ -35,7 +31,7 @@ export default function RegisterPage() {
   const strength = calculateStrength(form.password);
   const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
   const strengthColors = [
-    'bg-slate-700',
+    'bg-slate-200',
     'bg-red-500',
     'bg-yellow-500',
     'bg-cyan-500',
@@ -47,7 +43,6 @@ export default function RegisterPage() {
     if (!form.name.trim()) errs.name = 'Name is required';
     if (!form.email.includes('@')) errs.email = 'Valid email required';
 
-    // Updated validation to enforce 8 characters minimum
     if (form.password.length < 8) {
       errs.password = 'Password must be at least 8 characters';
     }
@@ -70,7 +65,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Send data to the backend
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
@@ -84,7 +78,6 @@ export default function RegisterPage() {
       });
 
       if (response.ok) {
-        // Redirect to login page on success
         router.push('/login');
       } else {
         const data = await response.json();
@@ -101,19 +94,18 @@ export default function RegisterPage() {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16 animated-gradient-bg relative">
-      <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-pink-600/15 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-indigo-600/20 rounded-full blur-[100px]" />
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16 relative bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      {/* Light background decorations */}
+      <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-blue-100/50 dark:bg-blue-900/20 rounded-full blur-[100px]" />
+      <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-cyan-100/50 dark:bg-cyan-900/20 rounded-full blur-[100px]" />
+      <div className="absolute inset-0 dot-grid opacity-20" />
 
       <div className="relative z-10 w-full max-w-md animate-fade-in-up">
-        <div className="gradient-card border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xl">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
-              <Zap className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">Create account</h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Create account</h1>
+            <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
               Join SnapBuy today — it's free
             </p>
           </div>
@@ -156,24 +148,23 @@ export default function RegisterPage() {
               {form.password.length > 0 && (
                 <div className="mt-2 pl-1">
                   <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs font-medium text-slate-500">
                       Password strength
                     </span>
                     <span
-                      className={`text-xs font-medium ${strength > 2 ? 'text-emerald-400' : strength > 1 ? 'text-yellow-400' : 'text-red-400'}`}
+                      className={`text-xs font-bold ${strength > 2 ? 'text-emerald-500' : strength > 1 ? 'text-yellow-600' : 'text-red-500'}`}
                     >
                       {strengthLabels[strength]}
                     </span>
                   </div>
-                  <div className="flex gap-1 h-1.5 w-full rounded-full overflow-hidden bg-white/5">
+                  <div className="flex gap-1 h-1.5 w-full rounded-full overflow-hidden bg-slate-100">
                     {[1, 2, 3, 4].map((level) => (
                       <div
                         key={level}
-                        className={`h-full flex-1 transition-all duration-300 ${
-                          strength >= level
+                        className={`h-full flex-1 transition-all duration-300 ${strength >= level
                             ? strengthColors[strength]
                             : 'bg-transparent'
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -195,7 +186,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-xl gradient-brand text-white font-semibold text-base hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/30 active:scale-[0.98] transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 mt-2"
+              className="flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-xl gradient-brand text-white font-semibold text-base hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/30 active:scale-[0.98] transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 mt-2"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -208,11 +199,11 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="text-center text-slate-400 text-sm mt-6">
+          <p className="text-center text-slate-600 dark:text-slate-400 text-sm mt-6">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="text-indigo-400 hover:text-indigo-300 font-medium hover:underline transition-colors"
+              className="text-cyan-600 hover:text-cyan-700 font-bold hover:underline transition-colors"
             >
               Sign in
             </Link>

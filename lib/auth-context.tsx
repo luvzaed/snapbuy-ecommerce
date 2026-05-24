@@ -15,6 +15,7 @@ interface AuthContextType {
   logout: () => void;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: number) => void;
+  updateQuantity: (productId: number, quantity: number) => void;
   cartCount: number;
   fetchOrders: () => Promise<void>;
   placeOrder: (shipping?: any, payment?: any, total?: number) => Promise<string | false>;
@@ -66,6 +67,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const removeFromCart = (productId: number) => {
     setCart((prev) => {
       const updated = prev.filter((item) => item.product.id !== productId);
+      localStorage.setItem('shop_cart', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const updateQuantity = (productId: number, quantity: number) => {
+    setCart((prev) => {
+      if (quantity <= 0) {
+        const updated = prev.filter((item) => item.product.id !== productId);
+        localStorage.setItem('shop_cart', JSON.stringify(updated));
+        return updated;
+      }
+      const updated = prev.map((item) =>
+        item.product.id === productId ? { ...item, quantity } : item,
+      );
       localStorage.setItem('shop_cart', JSON.stringify(updated));
       return updated;
     });
@@ -126,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         addToCart,
         removeFromCart,
+        updateQuantity,
         cartCount,
         fetchOrders,
         placeOrder,
