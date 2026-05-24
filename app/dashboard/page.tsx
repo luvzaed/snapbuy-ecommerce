@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { Package, LogOut, User, CheckCircle2, Clock, Truck, MapPin } from "lucide-react";
 
-const statusConfig = {
+const statusConfig: Record<string, any> = {
   pending: { icon: Clock, color: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/30", label: "Pending" },
   processing: { icon: Package, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/30", label: "Processing" },
   shipped: { icon: Truck, color: "text-indigo-400", bg: "bg-indigo-400/10", border: "border-indigo-400/30", label: "Shipped" },

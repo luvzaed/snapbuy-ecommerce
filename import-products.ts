@@ -12,7 +12,6 @@
  * The CSV must have columns: name, price, image, description
  */
 
-import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { createInterface } from 'readline';
@@ -22,7 +21,7 @@ const prisma = new PrismaClient();
 
 // ✅ Update this path to your actual CSV file location
 const CSV_FILE_PATH = path.resolve(
-  "C:\\Users\\zedal\\flipkart_com-ecommerce_sample.csv",
+  'C:\Users\zedal\flipkart_com-ecommerce_sample.csv',
 );
 
 interface CsvRow {
@@ -83,9 +82,6 @@ async function main() {
     );
     const image = row.image || row.image_link || '';
     const description = row.description || row.about_product || '';
-    // Extract category — Flipkart CSV uses "product_category_tree", take first level
-    const rawCategory = row.product_category_tree || row.category || '';
-    const category = rawCategory.split('>>')[0]?.replace(/[\[\]"]/g, '').trim() || 'General';
 
     if (!name || isNaN(price)) {
       skipped++;
@@ -94,7 +90,7 @@ async function main() {
 
     try {
       await prisma.product.create({
-        data: { name, price, image, description, category },
+        data: { name, price, image, description },
       });
       success++;
     } catch {

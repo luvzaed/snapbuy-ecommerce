@@ -4,7 +4,7 @@ import { Product } from '@/lib/types';
 import { useAuth } from '@/lib/auth-context';
 import { ShoppingCart, Star, Check } from 'lucide-react';
 import { useState } from 'react';
-import Link from 'next/link'; // أضفنا هذي عشان الروابط
+import Link from 'next/link';
 
 interface ProductCardProps {
   product: Product;
@@ -14,36 +14,34 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useAuth();
   const [added, setAdded] = useState(false);
 
-  // استقبلنا الـ Event هنا عشان نمنع تداخل الضغطات
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // هذا الأمر يمنع الكرت من نقلك لصفحة المنتج لما تضغط على زر الإضافة للسلة
+    e.preventDefault();
     addToCart(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
   };
 
   return (
-    // غلفنا الكرت كامل بالـ Link عشان يصير كله قابل للضغط
     <Link href={`/product/${product.id}`} className="block">
-      <div className="group relative gradient-card rounded-2xl overflow-hidden border border-white/[0.07] hover:border-cyan-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10 glow-hover">
+      <div className="group relative bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-cyan-300 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10">
         {/* Image container */}
-        <div className="relative h-52 overflow-hidden bg-[#0a0f1e]">
+        <div className="relative h-52 overflow-hidden bg-slate-50">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1424] via-[#0d1424]/20 to-transparent" />
+          {/* Subtle light overlay instead of the old dark one */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
 
           {/* Category badge */}
-          <span className="absolute top-3 left-3 px-2.5 py-1 text-xs glass text-cyan-300 font-medium rounded-lg border-cyan-500/20">
+          <span className="absolute top-3 left-3 px-2.5 py-1 text-xs bg-white/90 backdrop-blur-md text-cyan-700 font-bold rounded-lg border border-cyan-100 shadow-sm">
             {product.category}
           </span>
 
           {/* Price tag floating */}
-          <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg glass border-white/10">
-            <span className="text-white font-bold text-sm">
+          <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm">
+            <span className="text-slate-900 font-bold text-sm">
               ${product.price.toFixed(2)}
             </span>
           </div>
@@ -56,11 +54,13 @@ export default function ProductCard({ product }: ProductCardProps) {
             {[...Array(5)].map((_, i) => (
               <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
             ))}
-            <span className="text-xs text-slate-600 ml-2">(128 reviews)</span>
+            <span className="text-xs text-slate-500 ml-2 font-medium">
+              (128 reviews)
+            </span>
           </div>
 
           {/* Product name */}
-          <h3 className="text-white font-semibold text-base mb-1.5 group-hover:text-cyan-300 transition-colors duration-200 leading-snug">
+          <h3 className="text-slate-900 font-bold text-base mb-1.5 group-hover:text-cyan-600 transition-colors duration-200 leading-snug">
             {product.name}
           </h3>
           <p className="text-slate-500 text-sm mb-5 line-clamp-2 leading-relaxed">
@@ -68,17 +68,17 @@ export default function ProductCard({ product }: ProductCardProps) {
           </p>
 
           {/* Footer */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4 mt-auto">
             <div>
-              <p className="text-xl font-bold text-gradient">
+              <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
                 ${product.price.toFixed(2)}
               </p>
             </div>
             <button
               onClick={handleAddToCart}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
                 added
-                  ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-400'
+                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-600'
                   : 'gradient-brand text-white hover:opacity-90 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25'
               }`}
             >

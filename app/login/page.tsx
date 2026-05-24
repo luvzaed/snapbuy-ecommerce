@@ -1,51 +1,77 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
-import FormInput from "@/components/FormInput";
-import Link from "next/link";
-import { LogIn, Zap, Sparkles } from "lucide-react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import FormInput from '@/components/FormInput';
+import Link from 'next/link';
+import { LogIn, Zap } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const { setAuthUser } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const success = login(email, password);
-    if (success) {
-      router.push("/");
-    } else {
-      setError("Invalid email or password. Try admin@shop.com / admin123");
+
+    try {
+      // Send login request to the backend
+      const response = await fetch('/api/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Update global state
+        setAuthUser(data.user);
+
+        // Show success toast notification
+        toast.success('Successfully logged in!');
+
+        // Redirect to home
+        router.push('/');
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Invalid email or password');
+      }
+    } catch (err) {
+      setError('Network error, please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16 relative overflow-hidden bg-[#030712]">
-      {/* Ambient orbs */}
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-cyan-500/[0.07] rounded-full blur-[100px]" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-600/[0.07] rounded-full blur-[100px]" />
       <div className="absolute inset-0 dot-grid opacity-50" />
 
       <div className="relative z-10 w-full max-w-md animate-fade-in-up">
-        {/* Card */}
         <div className="glass rounded-3xl p-8 sm:p-10 shadow-2xl shadow-black/50">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center mx-auto mb-5 animate-pulse-glow">
               <Zap className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Welcome back</h1>
-            <p className="text-slate-500 text-sm mt-1.5">Sign in to your NovaMart account</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              Welcome back
+            </h1>
+            <p className="text-slate-500 text-sm mt-1.5">
+              Sign in to your SnapBuy account
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -90,19 +116,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 rounded-xl glass-light border-cyan-500/15">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <p className="text-xs text-cyan-400 font-semibold">Demo Credentials</p>
-            </div>
-            <p className="text-xs text-slate-500">User: <span className="text-slate-400">user@shop.com / user123</span></p>
-            <p className="text-xs text-slate-500 mt-0.5">Admin: <span className="text-slate-400">admin@shop.com / admin123</span></p>
-          </div>
-
           <p className="text-center text-slate-500 text-sm mt-6">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
+            Don&apos;t have an account?{' '}
+            <Link
+              href="/register"
+              className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
+            >
               Create one free
             </Link>
           </p>

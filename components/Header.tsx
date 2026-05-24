@@ -12,9 +12,14 @@ import {
   User,
   ChevronDown,
   Search,
+  UserCircle,
+  Package,
+  LayoutDashboard,
+  LogOut,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import VisualSearch from '@/components/VisualSearch';
+import toast from 'react-hot-toast';
 
 export default function Header() {
   const { user, logout, cartCount } = useAuth();
@@ -51,6 +56,10 @@ export default function Header() {
   const handleLogout = () => {
     logout();
     setUserMenuOpen(false);
+
+    // Show success toast notification for logout
+    toast.success('Successfully logged out!');
+
     router.push('/');
   };
 
@@ -65,10 +74,8 @@ export default function Header() {
     if (pathname === '/') {
       e.preventDefault();
       e.stopPropagation();
-
       document.documentElement.style.scrollBehavior = 'smooth';
       window.scrollTo(0, 0);
-
       setTimeout(() => {
         document.documentElement.style.scrollBehavior = 'auto';
       }, 1000);
@@ -95,8 +102,8 @@ export default function Header() {
               <Zap className="w-4 h-4 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">
-              <span className="text-gradient">Nova</span>
-              <span className="text-white">Mart</span>
+              <span className="text-gradient">Snap</span>
+              <span className="text-white">Buy</span>
             </span>
           </Link>
 
@@ -134,7 +141,6 @@ export default function Header() {
             >
               Home
             </Link>
-
             <Link
               href="/shop"
               className="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
@@ -146,7 +152,7 @@ export default function Header() {
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className={`flex items-center gap-1 p-2.5 rounded-xl glass-light transition-all duration-200 ${
-                  userMenuOpen
+                  userMenuOpen || user
                     ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-400'
                     : 'text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30'
                 }`}
@@ -158,7 +164,7 @@ export default function Header() {
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 glass border border-white/[0.08] rounded-2xl p-1.5 shadow-2xl animate-fade-in-up">
+                <div className="absolute right-0 mt-2 w-56 glass border border-white/[0.08] rounded-2xl p-1.5 shadow-2xl animate-fade-in-up">
                   {!user ? (
                     <>
                       <Link
@@ -178,27 +184,53 @@ export default function Header() {
                     </>
                   ) : (
                     <>
-                      <div className="px-4 py-2 mb-1 border-b border-white/[0.05]">
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-                          Account
+                      <div className="px-4 py-3 mb-1 border-b border-white/[0.05]">
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-0.5">
+                          Signed in as
                         </p>
                         <p className="text-sm text-white font-medium truncate">
                           {user.email}
                         </p>
                       </div>
-                      <Link
-                        href={user.role === 'admin' ? '/admin' : '/dashboard'}
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
-                      >
-                        {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all"
-                      >
-                        Logout
-                      </button>
+
+                      <div className="flex flex-col gap-0.5 mb-1">
+                        <Link
+                          href="/profile"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                        >
+                          <UserCircle className="w-4 h-4 text-cyan-400" />
+                          Profile
+                        </Link>
+
+                        <Link
+                          href="/orders"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                        >
+                          <Package className="w-4 h-4 text-cyan-400" />
+                          My Orders
+                        </Link>
+
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-cyan-400" />
+                          Dashboard
+                        </Link>
+                      </div>
+
+                      <div className="border-t border-white/[0.05] pt-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-all"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
@@ -279,6 +311,7 @@ export default function Header() {
             >
               Shop
             </Link>
+
             {!user ? (
               <>
                 <Link
@@ -298,22 +331,42 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link
-                  href={user.role === 'admin' ? '/admin' : '/dashboard'}
-                  className="px-3 py-3 rounded-xl text-base text-slate-400 hover:text-white hover:bg-white/[0.06]"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMenuOpen(false);
-                  }}
-                  className="text-left px-3 py-3 rounded-xl text-base text-red-400 hover:bg-red-500/10"
-                >
-                  Logout
-                </button>
+                <div className="px-3 py-2 mt-2 border-t border-white/[0.05]">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">
+                    My Account
+                  </p>
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <UserCircle className="w-5 h-5 text-cyan-400" /> Profile
+                  </Link>
+                  <Link
+                    href="/orders"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Package className="w-5 h-5 text-cyan-400" /> My Orders
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="w-5 h-5 text-cyan-400" />{' '}
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-red-400 hover:bg-red-500/10 mt-1"
+                  >
+                    <LogOut className="w-5 h-5" /> Logout
+                  </button>
+                </div>
               </>
             )}
           </div>
