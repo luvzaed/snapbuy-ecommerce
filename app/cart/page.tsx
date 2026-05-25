@@ -1,13 +1,14 @@
 'use client';
 
 import { useAuth } from '@/lib/auth-context';
+import { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, Trash2, ArrowRight, ShoppingBag, CheckCircle2, Loader2, Plus, Minus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
-function CartItemRow({ item }: { item: { product: any; quantity: number } }) {
+function CartItemRow({ item }: { item: { product: Product; quantity: number } }) {
   const { removeFromCart, updateQuantity } = useAuth();
 
   return (
@@ -15,6 +16,7 @@ function CartItemRow({ item }: { item: { product: any; quantity: number } }) {
       className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 rounded-2xl p-4 flex items-center gap-4 transition-all duration-300 hover:scale-[1.01]"
     >
       <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.product.image}
           alt={item.product.name}
@@ -70,7 +72,7 @@ function CartItemRow({ item }: { item: { product: any; quantity: number } }) {
 }
 
 export default function CartPage() {
-  const { cart, removeFromCart, user, placeOrder, isCheckingOut } = useAuth();
+  const { cart, user, placeOrder, isCheckingOut } = useAuth();
   const router = useRouter();
   const [orderSuccess, setOrderSuccess] = useState(false);
 

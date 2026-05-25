@@ -18,7 +18,7 @@ interface AuthContextType {
   updateQuantity: (productId: number, quantity: number) => void;
   cartCount: number;
   fetchOrders: () => Promise<void>;
-  placeOrder: (shipping?: any, payment?: any, total?: number) => Promise<string | false>;
+  placeOrder: (shipping?: Record<string, unknown>, payment?: Record<string, unknown>, total?: number) => Promise<string | false>;
   isCheckingOut: boolean;
 }
 
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const placeOrder = async (shipping?: any, payment?: any, total?: number) => {
+  const placeOrder = async (shipping?: Record<string, unknown>, payment?: Record<string, unknown>, total?: number) => {
     setIsCheckingOut(true);
     try {
       const res = await fetch('/api/orders', {

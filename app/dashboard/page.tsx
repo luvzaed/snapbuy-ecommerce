@@ -3,9 +3,10 @@
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { Package, LogOut, User, CheckCircle2, Clock, Truck, MapPin } from "lucide-react";
+import { Package, LogOut, User, CheckCircle2, Clock, Truck, MapPin, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 
-const statusConfig: Record<string, any> = {
+const statusConfig: Record<string, { icon: LucideIcon; color: string; bg: string; border: string; label: string }> = {
   pending: { icon: Clock, color: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/30", label: "Pending" },
   processing: { icon: Package, color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/30", label: "Processing" },
   shipped: { icon: Truck, color: "text-indigo-400", bg: "bg-indigo-400/10", border: "border-indigo-400/30", label: "Shipped" },
@@ -88,9 +89,9 @@ export default function DashboardPage() {
             <Package className="w-12 h-12 text-slate-600 mx-auto mb-4" />
             <p className="text-slate-400 text-lg">No orders yet</p>
             <p className="text-slate-500 text-sm mt-1 mb-6">Start shopping to see your orders here</p>
-            <a href="/#products" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-medium hover:scale-105 transition-transform">
+            <Link href="/#products" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-medium hover:scale-105 transition-transform">
               Browse Products
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="flex flex-col gap-4">

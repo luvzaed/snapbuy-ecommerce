@@ -40,7 +40,7 @@ export default function LoginPage() {
         const data = await response.json();
         setError(data.message || 'Invalid email or password');
       }
-    } catch (err) {
+    } catch {
       setError('Network error, please try again.');
     } finally {
       setLoading(false);
@@ -108,7 +108,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-slate-600 dark:text-slate-400 text-sm mt-6">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
               href="/register"
               className="text-cyan-600 hover:text-cyan-700 font-bold transition-colors"

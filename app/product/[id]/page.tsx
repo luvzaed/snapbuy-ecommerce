@@ -59,6 +59,7 @@ export default async function ProductDetailsPage({
           {/* Image Section (Left) */}
           <div className="lg:col-span-5 relative rounded-3xl overflow-hidden bg-white/5 flex items-center justify-center border border-white/10 p-4">
             <div className="w-full aspect-square relative rounded-2xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={product.image}
                 alt={product.name}

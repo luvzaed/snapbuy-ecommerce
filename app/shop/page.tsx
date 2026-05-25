@@ -161,6 +161,7 @@ function ShopContent() {
                     href={`/product/${product.id}`}
                     className="block relative aspect-square overflow-hidden bg-slate-50"
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={product.image}
                       alt={product.name}

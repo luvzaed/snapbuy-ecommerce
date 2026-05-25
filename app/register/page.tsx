@@ -83,7 +83,7 @@ export default function RegisterPage() {
         const data = await response.json();
         setErrors({ email: data.message || 'Something went wrong' });
       }
-    } catch (error) {
+    } catch {
       setErrors({ email: 'Network error, please try again.' });
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ export default function RegisterPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Create account</h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
-              Join SnapBuy today — it's free
+              Join SnapBuy today — it&apos;s free
             </p>
           </div>
 

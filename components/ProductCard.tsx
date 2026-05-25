@@ -26,6 +26,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="group relative bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10">
         {/* Image container */}
         <div className="relative h-52 overflow-hidden bg-slate-50 dark:bg-slate-800">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={product.image}
             alt={product.name}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Edit2, Trash2, Loader2, Plus, Package, Truck } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -20,7 +21,7 @@ export default function AdminDashboard() {
   });
 
   const [status, setStatus] = useState('');
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
       } else {
         setStatus('error');
       }
-    } catch (error) {
+    } catch {
       setStatus('error');
     }
   };
@@ -97,7 +98,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = (product: Product) => {
     setEditingId(product.id);
     setFormData({
       name: product.name,
@@ -141,7 +142,7 @@ export default function AdminDashboard() {
           <Package className="w-8 h-8 text-amber-500" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Admin Only</h2>
-        <p className="text-slate-500 dark:text-slate-400 mb-6">You don't have permission to access the admin panel.</p>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">You don&apos;t have permission to access the admin panel.</p>
         <button
           onClick={() => router.push('/')}
           className="px-6 py-3 rounded-xl gradient-brand text-white font-semibold hover:opacity-90 transition-all"
@@ -268,6 +269,7 @@ export default function AdminDashboard() {
                 <div key={product.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all group">
 
                   <div className="flex items-start gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={product.image} alt={product.name} className="w-20 h-20 object-cover rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
                     <div className="flex-1">
                       <h3 className="text-slate-900 dark:text-white font-bold text-md line-clamp-2 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{product.name}</h3>
