@@ -34,8 +34,8 @@ export default function DashboardPage() {
             <User className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">My Dashboard</h1>
-            <p className="text-slate-400 text-sm">Welcome back, <span className="text-indigo-400 font-medium">{user.name}</span></p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">My Dashboard</h1>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">Welcome back, <span className="text-indigo-500 dark:text-indigo-400 font-medium">{user.name}</span></p>
           </div>
         </div>
         <button
@@ -49,45 +49,45 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-        <div className="gradient-card border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+        <div className="gradient-card border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
             <Package className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-white">{orders.length}</p>
-            <p className="text-slate-400 text-xs">Total Orders</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{orders.length}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs">Total Orders</p>
           </div>
         </div>
-        <div className="gradient-card border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+        <div className="gradient-card border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center">
             <ShoppingBag className="w-6 h-6 text-purple-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-white">{cart.length}</p>
-            <p className="text-slate-400 text-xs">Items in Cart</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{cart.length}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs">Items in Cart</p>
           </div>
         </div>
-        <div className="gradient-card border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+        <div className="gradient-card border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-pink-600/20 border border-pink-500/30 flex items-center justify-center">
             <DollarSign className="w-6 h-6 text-pink-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-white">${orders.reduce((s, o) => s + o.total, 0).toFixed(2)}</p>
-            <p className="text-slate-400 text-xs">Total Spent</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">${orders.reduce((s, o) => s + o.total, 0).toFixed(2)}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs">Total Spent</p>
           </div>
         </div>
       </div>
 
       {/* Orders */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
           <Package className="w-5 h-5 text-indigo-400" />
           Order History
         </h2>
         {orders.length === 0 ? (
-          <div className="gradient-card border border-white/10 rounded-2xl p-12 text-center">
+          <div className="gradient-card border border-slate-200 dark:border-white/10 rounded-2xl p-12 text-center">
             <Package className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 text-lg">No orders yet</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">No orders yet</p>
             <p className="text-slate-500 text-sm mt-1 mb-6">Start shopping to see your orders here</p>
             <Link href="/#products" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-brand text-white font-medium hover:scale-105 transition-transform">
               Browse Products
@@ -100,19 +100,19 @@ export default function DashboardPage() {
               return (
                 <div
                   key={order.id}
-                  className="gradient-card border border-white/10 hover:border-indigo-500/40 rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-indigo-500/10 animate-fade-in-up"
+                  className="gradient-card border border-slate-200 dark:border-white/10 hover:border-indigo-500/40 rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-indigo-500/10 animate-fade-in-up"
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-white font-bold text-lg">{order.id}</h3>
+                        <h3 className="text-slate-900 dark:text-white font-bold text-lg">{order.id}</h3>
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${s.bg} ${s.color} ${s.border}`}>
                           <s.icon className="w-3 h-3" />
                           {s.label}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-slate-400 text-sm">
+                      <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 text-sm">
                         <MapPin className="w-3.5 h-3.5" />
                         {new Date(order.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                       </div>
