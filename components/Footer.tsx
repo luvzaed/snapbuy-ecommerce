@@ -18,7 +18,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-600 dark:text-slate-400 text-sm max-w-xs leading-relaxed">
-              Your premium tech destination. Discover cutting-edge electronics, wearables, and accessories curated for the modern lifestyle.
+              Premium teknoloji adresiniz. Modern yaşam için özenle seçilmiş elektronik ürünleri, giyilebilir teknolojileri ve aksesuarları keşfedin.
             </p>
             <div className="flex items-center gap-3 mt-7">
               {[Github, Twitter, Instagram, Linkedin].map((Icon, i) => (
@@ -35,9 +35,9 @@ export default function Footer() {
 
           {/* Shop */}
           <div>
-            <h4 className="text-slate-900 dark:text-white font-semibold text-sm mb-5 uppercase tracking-wider">Shop</h4>
+            <h4 className="text-slate-900 dark:text-white font-semibold text-sm mb-5 uppercase tracking-wider">Mağaza</h4>
             <ul className="space-y-3">
-              {["Electronics", "Wearables", "Gaming", "Audio", "Photography", "Computers"].map((cat) => (
+              {["Elektronik", "Giyilebilir", "Oyun", "Ses", "Fotoğraf", "Bilgisayar"].map((cat) => (
                 <li key={cat}>
                   <a
                     href="#"
@@ -52,15 +52,15 @@ export default function Footer() {
 
           {/* Company */}
           <div>
-            <h4 className="text-slate-900 dark:text-white font-semibold text-sm mb-5 uppercase tracking-wider">Company</h4>
+            <h4 className="text-slate-900 dark:text-white font-semibold text-sm mb-5 uppercase tracking-wider">Şirket</h4>
             <ul className="space-y-3">
               {[
-                { label: "About Us", href: "#" },
-                { label: "Careers", href: "#" },
-                { label: "Privacy Policy", href: "#" },
-                { label: "Terms of Service", href: "#" },
-                { label: "Support", href: "#" },
-                { label: "Login", href: "/login" },
+                { label: "Hakkımızda", href: "#" },
+                { label: "Kariyer", href: "#" },
+                { label: "Gizlilik Politikası", href: "#" },
+                { label: "Hizmet Şartları", href: "#" },
+                { label: "Destek", href: "#" },
+                { label: "Giriş", href: "/login" },
               ].map((link) => (
                 <li key={link.label}>
                   <Link
@@ -77,7 +77,7 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="border-t border-slate-200 dark:border-white/[0.07] mt-12 pt-7 flex items-center justify-center">
-          <p className="text-slate-500 dark:text-slate-600 text-sm">© 2026 SnapBuy. All rights reserved.</p>
+          <p className="text-slate-500 dark:text-slate-600 text-sm">© 2026 SnapBuy. Tüm hakları saklıdır.</p>
         </div>
       </div>
     </footer>

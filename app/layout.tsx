@@ -10,9 +10,9 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SnapBuy — Premium Tech Store',
+  title: 'SnapBuy — Premium Teknoloji Mağazası',
   description:
-    'Discover the latest tech products at SnapBuy. Electronics, wearables, gaming gear and more.',
+    'SnapBuy ile en yeni teknoloji ürünlerini keşfedin. Elektronik, giyilebilir cihazlar, oyun ekipmanları ve daha fazlası.',
 };
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="tr" suppressHydrationWarning>
       <body
         className={`${inter.className} bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300`}
       >

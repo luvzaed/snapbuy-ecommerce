@@ -123,13 +123,13 @@ export default function AdminDashboard() {
         <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center justify-center mb-6">
           <Package className="w-8 h-8 text-red-500" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Access Denied</h2>
-        <p className="text-slate-500 dark:text-slate-400 mb-6">Please log in to access this page.</p>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Erişim Reddedildi</h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">Bu sayfaya erişmek için lütfen giriş yapın.</p>
         <button
           onClick={() => router.push('/login')}
           className="px-6 py-3 rounded-xl gradient-brand text-white font-semibold hover:opacity-90 transition-all"
         >
-          Go to Login
+          Girişe Git
         </button>
       </div>
     );
@@ -141,13 +141,13 @@ export default function AdminDashboard() {
         <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center justify-center mb-6">
           <Package className="w-8 h-8 text-amber-500" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Admin Only</h2>
-        <p className="text-slate-500 dark:text-slate-400 mb-6">You don&apos;t have permission to access the admin panel.</p>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Sadece Yönetici</h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">Yönetici paneline erişim izniniz yok.</p>
         <button
           onClick={() => router.push('/')}
           className="px-6 py-3 rounded-xl gradient-brand text-white font-semibold hover:opacity-90 transition-all"
         >
-          Back to Home
+          Ana Sayfaya Dön
         </button>
       </div>
     );
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       <h1 className="text-4xl font-extrabold mb-6 text-slate-900 dark:text-white flex items-center gap-3">
-        Admin <span className="text-gradient">Dashboard</span>
+        Yönetici <span className="text-gradient">Paneli</span>
       </h1>
 
       {/* Admin Navigation */}
@@ -166,14 +166,14 @@ export default function AdminDashboard() {
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-brand text-white font-semibold text-sm shadow-lg shadow-indigo-500/20"
         >
           <Package className="w-4 h-4" />
-          Products
+          Ürünler
         </Link>
         <Link
           href="/admin/orders"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
         >
           <Truck className="w-4 h-4" />
-          Manage Orders
+          Siparişleri Yönet
         </Link>
       </div>
 
@@ -182,61 +182,61 @@ export default function AdminDashboard() {
         {/* Left Column: Form */}
         <div className="lg:col-span-1 p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm h-fit sticky top-24">
           <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white text-center border-b border-slate-100 dark:border-slate-800 pb-4">
-            {editingId ? '✏️ Edit Product' : '✨ Add New Product'}
+            {editingId ? '✏️ Ürünü Düzenle' : '✨ Yeni Ürün Ekle'}
           </h2>
 
           {status === 'success' && (
             <div className="mb-6 p-4 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 text-center font-medium transition-all">
-              {editingId ? 'Product updated successfully!' : 'Product added successfully!'}
+              {editingId ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!'}
             </div>
           )}
 
           {status === 'error' && (
             <div className="mb-6 p-4 text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-200 dark:border-rose-800 text-center font-medium transition-all">
-              Failed to save product. Please try again.
+              Ürün kaydedilemedi. Lütfen tekrar deneyin.
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Product Name</label>
-              <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. Wireless Headphones" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Ürün Adı</label>
+              <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="örn. Kablosuz Kulaklık" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Price ($)</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Fiyat (₺)</label>
                 <input type="number" name="price" value={formData.price} onChange={handleChange} required placeholder="199" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Stock</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Stok</label>
                 <input type="number" name="stock" value={formData.stock} onChange={handleChange} placeholder="50" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Category</label>
-              <input type="text" name="category" value={formData.category} onChange={handleChange} placeholder="e.g. Electronics" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Kategori</label>
+              <input type="text" name="category" value={formData.category} onChange={handleChange} placeholder="örn. Elektronik" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Image URL</label>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Görsel URL</label>
               <input type="url" name="image" value={formData.image} onChange={handleChange} required placeholder="https://..." className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Description</label>
-              <textarea name="description" value={formData.description} onChange={handleChange} rows={3} placeholder="Describe the product..." className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all resize-none"></textarea>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Açıklama</label>
+              <textarea name="description" value={formData.description} onChange={handleChange} rows={3} placeholder="Ürünü tanımlayın..." className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all resize-none"></textarea>
             </div>
 
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={status === 'loading'} className="flex-1 gradient-brand text-white font-bold py-3.5 px-6 rounded-xl hover:opacity-90 hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 disabled:opacity-50 disabled:scale-100 flex justify-center items-center gap-2">
-                {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingId ? 'Save Changes' : <><Plus className="w-5 h-5" /> Add Product</>)}
+                {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingId ? 'Değişiklikleri Kaydet' : <><Plus className="w-5 h-5" /> Ürün Ekle</>)}
               </button>
 
               {editingId && (
                 <button type="button" onClick={cancelEdit} className="px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium transition-all">
-                  Cancel
+                  İptal
                 </button>
               )}
             </div>
@@ -248,10 +248,10 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-6 px-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-500" />
-              Current Products
+              Mevcut Ürünler
             </h2>
             <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm font-semibold border border-indigo-200 dark:border-indigo-800">
-              Total: {products.length}
+              Toplam: {products.length}
             </span>
           </div>
 
@@ -261,7 +261,7 @@ export default function AdminDashboard() {
             </div>
           ) : products.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400">
-              No products yet. Use the form to add your first product!
+              Henüz ürün yok. İlk ürününüzü eklemek için formu kullanın!
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -274,14 +274,14 @@ export default function AdminDashboard() {
                     <div className="flex-1">
                       <h3 className="text-slate-900 dark:text-white font-bold text-md line-clamp-2 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{product.name}</h3>
                       <div className="text-sm font-black text-gradient mt-1">
-                        ${product.price}
+                        ₺{product.price}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex gap-2 text-xs">
-                      <span className="bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Stock: {product.stock}</span>
+                      <span className="bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Stok: {product.stock}</span>
                       <span className="bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[80px]">{product.category}</span>
                     </div>
 

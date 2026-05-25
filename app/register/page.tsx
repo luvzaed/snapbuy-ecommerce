@@ -29,7 +29,7 @@ export default function RegisterPage() {
   };
 
   const strength = calculateStrength(form.password);
-  const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const strengthLabels = ['', 'Zayıf', 'Orta', 'İyi', 'Güçlü'];
   const strengthColors = [
     'bg-slate-200',
     'bg-red-500',
@@ -40,15 +40,15 @@ export default function RegisterPage() {
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = 'Name is required';
-    if (!form.email.includes('@')) errs.email = 'Valid email required';
+    if (!form.name.trim()) errs.name = 'Ad gerekli';
+    if (!form.email.includes('@')) errs.email = 'Geçerli e-posta gerekli';
 
     if (form.password.length < 8) {
-      errs.password = 'Password must be at least 8 characters';
+      errs.password = 'Şifre en az 8 karakter olmalı';
     }
 
     if (form.password !== form.confirm) {
-      errs.confirm = 'Passwords do not match';
+      errs.confirm = 'Şifreler eşleşmiyor';
     }
     return errs;
   };
@@ -81,10 +81,10 @@ export default function RegisterPage() {
         router.push('/login');
       } else {
         const data = await response.json();
-        setErrors({ email: data.message || 'Something went wrong' });
+        setErrors({ email: data.message || 'Bir şeyler ters gitti' });
       }
     } catch {
-      setErrors({ email: 'Network error, please try again.' });
+      setErrors({ email: 'Ağ hatası, lütfen tekrar deneyin.' });
     } finally {
       setLoading(false);
     }
@@ -104,16 +104,16 @@ export default function RegisterPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xl">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Create account</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Hesap oluştur</h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
-              Join SnapBuy today — it&apos;s free
+              SnapBuy&apos;a bugün katılın — ücretsiz
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <FormInput
               id="name"
-              label="Full Name"
+              label="Ad Soyad"
               type="text"
               placeholder="John Doe"
               value={form.name}
@@ -123,7 +123,7 @@ export default function RegisterPage() {
             />
             <FormInput
               id="reg-email"
-              label="Email address"
+              label="E-posta adresi"
               type="email"
               placeholder="you@example.com"
               value={form.email}
@@ -135,9 +135,9 @@ export default function RegisterPage() {
             <div className="flex flex-col">
               <FormInput
                 id="reg-password"
-                label="Password"
+                label="Şifre"
                 type="password"
-                placeholder="Min 8 characters"
+                placeholder="En az 8 karakter"
                 value={form.password}
                 onChange={set('password')}
                 error={errors.password}
@@ -149,7 +149,7 @@ export default function RegisterPage() {
                 <div className="mt-2 pl-1">
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="text-xs font-medium text-slate-500">
-                      Password strength
+                      Şifre gücü
                     </span>
                     <span
                       className={`text-xs font-bold ${strength > 2 ? 'text-emerald-500' : strength > 1 ? 'text-yellow-600' : 'text-red-500'}`}
@@ -174,9 +174,9 @@ export default function RegisterPage() {
 
             <FormInput
               id="confirm"
-              label="Confirm Password"
+              label="Şifre Tekrar"
               type="password"
-              placeholder="Repeat your password"
+              placeholder="Şifrenizi tekrar girin"
               value={form.confirm}
               onChange={set('confirm')}
               error={errors.confirm}
@@ -193,19 +193,19 @@ export default function RegisterPage() {
               ) : (
                 <>
                   <UserPlus className="w-5 h-5" />
-                  Create Account
+                  Hesap Oluştur
                 </>
               )}
             </button>
           </form>
 
           <p className="text-center text-slate-600 dark:text-slate-400 text-sm mt-6">
-            Already have an account?{' '}
+            Zaten hesabınız var mı?{' '}
             <Link
               href="/login"
               className="text-cyan-600 hover:text-cyan-700 font-bold hover:underline transition-colors"
             >
-              Sign in
+              Giriş yap
             </Link>
           </p>
         </div>

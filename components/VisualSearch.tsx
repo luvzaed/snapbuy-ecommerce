@@ -67,7 +67,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
       setCameraActive(true);
       setPreview(null);
     } catch {
-      setCameraError("Camera access denied. Please allow camera permissions and try again.");
+      setCameraError("Kamera erişimi reddedildi. Lütfen kamera izinlerine onay verip tekrar deneyin.");
     }
   };
 
@@ -115,10 +115,10 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
         body: JSON.stringify({ image: preview }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Visual search failed.");
+      if (!res.ok) throw new Error(data.error || "Görsel arama başarısız oldu.");
       setResults((data.products ?? []).filter((p: Match) => p && p.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Visual search failed.");
+      setError(err instanceof Error ? err.message : "Görsel arama başarısız oldu.");
     } finally {
       setSearchState("done");
     }
@@ -153,8 +153,8 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                   <ScanSearch className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-white font-bold text-base leading-none">Visual Search</h2>
-                  <p className="text-slate-500 text-xs mt-0.5">Search by image or camera</p>
+                  <h2 className="text-white font-bold text-base leading-none">Görsel Arama</h2>
+                  <p className="text-slate-500 text-xs mt-0.5">Görsel veya kamera ile ara</p>
                 </div>
               </div>
               <button
@@ -178,7 +178,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                   }`}
                 >
                   {t === "upload" ? <Upload className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
-                  {t === "upload" ? "Upload Image" : "Live Camera"}
+                  {t === "upload" ? "Görsel Yükle" : "Canlı Kamera"}
                 </button>
               ))}
             </div>
@@ -198,9 +198,9 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                       <div className="w-14 h-14 rounded-2xl glass-light flex items-center justify-center mx-auto mb-4 group-hover:border-cyan-500/30 group-hover:bg-cyan-500/10 transition-all">
                         <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-cyan-400 transition-colors" />
                       </div>
-                      <p className="text-white font-semibold mb-1">Drop image here</p>
-                      <p className="text-slate-500 text-sm">or click to browse files</p>
-                      <p className="text-slate-600 text-xs mt-3">PNG, JPG, WEBP up to 10MB</p>
+                      <p className="text-white font-semibold mb-1">Görseli buraya bırakın</p>
+                      <p className="text-slate-500 text-sm">veya dosya seçmek için tıklayın</p>
+                      <p className="text-slate-600 text-xs mt-3">PNG, JPG, WEBP — en fazla 10MB</p>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -246,12 +246,12 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                           <div className="w-16 h-16 rounded-2xl glass-light flex items-center justify-center">
                             <Camera className="w-7 h-7 text-slate-400" />
                           </div>
-                          <p className="text-slate-400 text-sm">Camera preview will appear here</p>
+                          <p className="text-slate-400 text-sm">Kamera önizlemesi burada görünecek</p>
                           <button
                             onClick={startCamera}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-brand text-white text-sm font-semibold hover:opacity-90 hover:scale-105 transition-all"
                           >
-                            <Camera className="w-4 h-4" /> Start Camera
+                            <Camera className="w-4 h-4" /> Kamerayı Başlat
                           </button>
                         </div>
                       )}
@@ -278,7 +278,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                           onClick={capturePhoto}
                           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl gradient-brand text-white font-semibold hover:opacity-90 hover:scale-[1.02] transition-all"
                         >
-                          <Camera className="w-4 h-4" /> Capture Photo
+                          <Camera className="w-4 h-4" /> Fotoğraf Çek
                         </button>
                         <button
                           onClick={stopCamera}
@@ -333,7 +333,7 @@ function PreviewSection({
     <div>
       <div className="relative rounded-2xl overflow-hidden border border-white/[0.07] mb-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={preview} alt="Preview" className="w-full object-cover max-h-52" />
+        <img src={preview} alt="Önizleme" className="w-full object-cover max-h-52" />
         <button
           onClick={onReset}
           className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-all"
@@ -347,14 +347,14 @@ function PreviewSection({
           onClick={onSearch}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl gradient-brand text-white font-semibold hover:opacity-90 hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/25 transition-all duration-200"
         >
-          <Search className="w-4 h-4" /> Search by Image
+          <Search className="w-4 h-4" /> Görselle Ara
         </button>
       )}
 
       {searchState === "searching" && (
         <div className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-white/[0.05] border border-white/[0.08] text-slate-300">
           <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
-          <span className="text-sm font-medium">Analyzing image…</span>
+          <span className="text-sm font-medium">Görsel analiz ediliyor…</span>
         </div>
       )}
 
@@ -367,13 +367,13 @@ function PreviewSection({
             </div>
           ) : results.length === 0 ? (
             <div className="px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-slate-300 text-sm font-medium text-center">
-              No similar products found. Try another image.
+              Benzer ürün bulunamadı. Başka bir görsel deneyin.
             </div>
           ) : (
             <>
               <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                Found {results.length} similar product{results.length === 1 ? "" : "s"}
+                {results.length} benzer ürün bulundu
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {results.map((p) => (
@@ -395,11 +395,11 @@ function PreviewSection({
                       </p>
                       <p className="text-slate-500 text-xs truncate">{p.category}</p>
                       <p className="text-cyan-400 text-sm font-semibold mt-0.5">
-                        ${Number(p.price).toFixed(2)}
+                        ₺{Number(p.price).toFixed(2)}
                       </p>
                     </div>
                     <span className="flex-shrink-0 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-semibold">
-                      {Math.round(p.similarity)}% match
+                      %{Math.round(p.similarity)} eşleşme
                     </span>
                   </Link>
                 ))}
@@ -410,7 +410,7 @@ function PreviewSection({
             onClick={onReset}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl glass-light text-slate-400 hover:text-white text-sm transition-all"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Try another image
+            <RefreshCw className="w-3.5 h-3.5" /> Başka bir görsel dene
           </button>
         </div>
       )}

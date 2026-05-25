@@ -12,11 +12,11 @@ const slides = [
     id: 1,
     badge: 'New Arrival',
     badgeColor: 'from-cyan-500 to-blue-500',
-    tag: 'Electronics',
+    tag: 'Elektronik',
     title: 'Wireless Noise-Cancelling Headphones',
     subtitle: 'Premium over-ear headphones with active noise cancellation and 30-hour battery life.',
-    price: '$199.99',
-    originalPrice: '$279.99',
+    price: '₺199.99',
+    originalPrice: '₺279.99',
     rating: 4.8,
     reviews: 2341,
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=700&h=700&fit=crop',
@@ -32,11 +32,11 @@ const slides = [
     id: 2,
     badge: 'Best Seller',
     badgeColor: 'from-violet-500 to-purple-600',
-    tag: 'Electronics',
+    tag: 'Elektronik',
     title: 'Smartphone Pro Max',
     subtitle: 'Latest flagship smartphone with a 6.7-inch OLED display and a triple-camera system.',
-    price: '$999.99',
-    originalPrice: '$1,199.99',
+    price: '₺999.99',
+    originalPrice: '₺1,199.99',
     rating: 4.9,
     reviews: 5872,
     image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=700&h=700&fit=crop',
@@ -52,11 +52,11 @@ const slides = [
     id: 3,
     badge: 'Top Rated',
     badgeColor: 'from-blue-500 to-cyan-400',
-    tag: 'Electronics',
+    tag: 'Elektronik',
     title: 'Ultra-Slim Laptop 15 inch',
     subtitle: 'Powerful 15-inch laptop with M2 chip and Retina display crafted for professionals.',
-    price: '$1,299.99',
-    originalPrice: '$1,599.99',
+    price: '₺1,299.99',
+    originalPrice: '₺1,599.99',
     rating: 4.7,
     reviews: 1988,
     image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=700&h=700&fit=crop',
@@ -72,11 +72,11 @@ const slides = [
     id: 4,
     badge: 'Hot Deal',
     badgeColor: 'from-amber-500 to-orange-500',
-    tag: 'Electronics',
+    tag: 'Elektronik',
     title: 'Professional DSLR Camera',
     subtitle: 'Full-frame DSLR camera with 24.2MP sensor and 4K video recording for creators.',
-    price: '$899.99',
-    originalPrice: '$1,149.99',
+    price: '₺899.99',
+    originalPrice: '₺1,149.99',
     rating: 4.8,
     reviews: 3210,
     image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=700&h=700&fit=crop',
@@ -92,11 +92,11 @@ const slides = [
     id: 5,
     badge: 'Premium',
     badgeColor: 'from-emerald-500 to-teal-500',
-    tag: 'Accessories',
+    tag: 'Aksesuar',
     title: 'Classic Analog Wristwatch',
     subtitle: 'Elegant stainless steel watch with leather strap and Swiss movement for timeless style.',
-    price: '$249.99',
-    originalPrice: '$349.99',
+    price: '₺249.99',
+    originalPrice: '₺349.99',
     rating: 4.9,
     reviews: 4120,
     image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700&h=700&fit=crop',
@@ -173,7 +173,7 @@ export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
 
   const slide = slides[current];
   const discount = slide.originalPrice
-    ? Math.round((1 - parseFloat(slide.price.replace(/[$,]/g, '')) / parseFloat(slide.originalPrice.replace(/[$,]/g, ''))) * 100)
+    ? Math.round((1 - parseFloat(slide.price.replace(/[₺,]/g, '')) / parseFloat(slide.originalPrice.replace(/[₺,]/g, ''))) * 100)
     : 0;
 
   return (
@@ -254,7 +254,7 @@ export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
                 ))}
               </div>
               <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{slide.rating}</span>
-              <span className="text-sm text-slate-500 dark:text-slate-400">({slide.reviews.toLocaleString()} reviews)</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">({slide.reviews.toLocaleString()} yorum)</span>
             </div>
 
             {/* Price + CTA */}
@@ -283,7 +283,7 @@ export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
                 }}
               >
                 <ShoppingBag className="w-4 h-4" />
-                Shop Now
+                Hemen Al
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

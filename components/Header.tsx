@@ -58,7 +58,7 @@ export default function Header() {
     logout();
     setUserMenuOpen(false);
 
-    toast.success('Successfully logged out!');
+    toast.success('Başarıyla çıkış yapıldı!');
 
     router.push('/');
   };
@@ -119,13 +119,13 @@ export default function Header() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
+                placeholder="Ürün ara..."
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full py-2.5 pl-11 pr-12 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 focus:bg-white dark:focus:bg-slate-800 focus:ring-1 focus:ring-cyan-500/50 transition-all shadow-inner"
               />
               <button
                 type="button"
                 onClick={() => setVsOpen(true)}
-                title="Visual Search with AI"
+                title="Yapay Zeka ile Görsel Arama"
                 className="absolute inset-y-0 right-1.5 my-1.5 px-2.5 flex items-center bg-cyan-50 dark:bg-cyan-900/30 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400 rounded-full transition-all border border-cyan-100 dark:border-cyan-800"
               >
                 <ScanSearch className="h-4 w-4" />
@@ -140,13 +140,13 @@ export default function Header() {
               onClick={handleHomeClick}
               className="px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 cursor-pointer font-medium"
             >
-              Home
+              Ana Sayfa
             </Link>
             <Link
               href="/shop"
               className="px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 font-medium"
             >
-              Shop
+              Mağaza
             </Link>
 
             {/* User Dropdown */}
@@ -173,21 +173,21 @@ export default function Header() {
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                       >
-                        Log In
+                        Giriş Yap
                       </Link>
                       <Link
                         href="/register"
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                       >
-                        Sign In
+                        Kayıt Ol
                       </Link>
                     </>
                   ) : (
                     <>
                       <div className="px-4 py-3 mb-1 border-b border-slate-100 dark:border-slate-700">
                         <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">
-                          Signed in as
+                          Giriş yapan hesap
                         </p>
                         <p className="text-sm text-slate-900 dark:text-slate-100 font-bold truncate">
                           {user.email}
@@ -201,7 +201,7 @@ export default function Header() {
                           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                         >
                           <UserCircle className="w-4 h-4 text-cyan-500" />
-                          Profile
+                          Profil
                         </Link>
 
                         <Link
@@ -210,7 +210,7 @@ export default function Header() {
                           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:text-cyan-600 hover:bg-slate-50 transition-all font-medium"
                         >
                           <Package className="w-4 h-4 text-cyan-500" />
-                          My Orders
+                          Siparişlerim
                         </Link>
 
                         <Link
@@ -219,7 +219,7 @@ export default function Header() {
                           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:text-cyan-600 hover:bg-slate-50 transition-all font-medium"
                         >
                           <LayoutDashboard className="w-4 h-4 text-cyan-500" />
-                          Dashboard
+                          Panelim
                         </Link>
 
                         {user.role === 'admin' && (
@@ -229,7 +229,7 @@ export default function Header() {
                             className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all font-medium"
                           >
                             <Shield className="w-4 h-4 text-amber-500" />
-                            Admin Panel
+                            Yönetici Paneli
                           </Link>
                         )}
                       </div>
@@ -240,7 +240,7 @@ export default function Header() {
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all font-medium"
                         >
                           <LogOut className="w-4 h-4" />
-                          Logout
+                          Çıkış Yap
                         </button>
                       </div>
                     </>
@@ -311,7 +311,7 @@ export default function Header() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
+                  placeholder="Ürün ara..."
                   className="w-full bg-slate-100 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:bg-white shadow-inner"
                 />
               </form>
@@ -321,14 +321,14 @@ export default function Header() {
               onClick={handleHomeClick}
               className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 cursor-pointer font-medium"
             >
-              Home
+              Ana Sayfa
             </Link>
             <Link
               href="/shop"
               onClick={() => setMenuOpen(false)}
               className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 font-medium"
             >
-              Shop
+              Mağaza
             </Link>
 
             {!user ? (
@@ -338,42 +338,42 @@ export default function Header() {
                   className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                   onClick={() => setMenuOpen(false)}
                 >
-                  Log In
+                  Giriş Yap
                 </Link>
                 <Link
                   href="/register"
                   className="px-3 py-3 rounded-xl text-base text-slate-600 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                   onClick={() => setMenuOpen(false)}
                 >
-                  Sign In
+                  Kayıt Ol
                 </Link>
               </>
             ) : (
               <>
                 <div className="px-3 py-2 mt-2 border-t border-slate-100">
                   <p className="text-xs text-slate-400 uppercase tracking-wider mb-2 font-bold">
-                    My Account
+                    Hesabım
                   </p>
                   <Link
                     href="/profile"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <UserCircle className="w-5 h-5 text-cyan-500" /> Profile
+                    <UserCircle className="w-5 h-5 text-cyan-500" /> Profil
                   </Link>
                   <Link
                     href="/orders"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Package className="w-5 h-5 text-cyan-500" /> My Orders
+                    <Package className="w-5 h-5 text-cyan-500" /> Siparişlerim
                   </Link>
                   <Link
                     href="/dashboard"
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <LayoutDashboard className="w-5 h-5 text-cyan-500" /> Dashboard
+                    <LayoutDashboard className="w-5 h-5 text-cyan-500" /> Panelim
                   </Link>
 
                   {user.role === 'admin' && (
@@ -382,7 +382,7 @@ export default function Header() {
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 font-medium"
                       onClick={() => setMenuOpen(false)}
                     >
-                      <Shield className="w-5 h-5 text-amber-500" /> Admin Panel
+                      <Shield className="w-5 h-5 text-amber-500" /> Yönetici Paneli
                     </Link>
                   )}
 
@@ -393,7 +393,7 @@ export default function Header() {
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-red-600 hover:bg-red-50 mt-1 font-medium"
                   >
-                    <LogOut className="w-5 h-5" /> Logout
+                    <LogOut className="w-5 h-5" /> Çıkış Yap
                   </button>
                 </div>
               </>

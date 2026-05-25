@@ -43,7 +43,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Price tag floating */}
           <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm">
             <span className="text-slate-900 dark:text-white font-bold text-sm">
-              ${product.price.toFixed(2)}
+              ₺{product.price.toFixed(2)}
             </span>
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
             ))}
             <span className="text-xs text-slate-500 ml-2 font-medium">
-              (128 reviews)
+              (128 yorum)
             </span>
           </div>
 
@@ -72,7 +72,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4 mt-auto">
             <div>
               <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
-                ${product.price.toFixed(2)}
+                ₺{product.price.toFixed(2)}
               </p>
             </div>
             <button
@@ -86,12 +86,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               {added ? (
                 <>
                   <Check className="w-4 h-4" />
-                  Added!
+                  Eklendi!
                 </>
               ) : (
                 <>
                   <ShoppingCart className="w-4 h-4" />
-                  Add to Cart
+                  Sepete Ekle
                 </>
               )}
             </button>

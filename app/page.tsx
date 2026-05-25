@@ -42,14 +42,14 @@ export default function HomePage() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-light border-cyan-500/20 text-cyan-500 dark:text-cyan-400 text-xs font-semibold uppercase tracking-widest mb-4">
-            Featured Collection
+            Öne Çıkan Koleksiyon
           </div>
           <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">
-            Top <span className="text-gradient">Products</span>
+            En İyi <span className="text-gradient">Ürünler</span>
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl mx-auto leading-relaxed">
-            Handpicked favorites from our premium catalog, loved by thousands of
-            customers worldwide.
+            Premium kataloğumuzdan özenle seçilmiş, dünya çapında binlerce
+            müşteri tarafından sevilen ürünler.
           </p>
         </div>
 
@@ -78,11 +78,11 @@ export default function HomePage() {
           /* Fallback message when store is empty */
           <div className="text-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl">
             <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-3">
-              No Products Found
+              Ürün Bulunamadı
             </h3>
             <p className="text-slate-500">
-              Your store is currently empty. Head over to the admin panel to add
-              your first product!
+              Mağazanız şu anda boş. İlk ürününüzü eklemek için yönetici
+              paneline gidin!
             </p>
           </div>
         )}

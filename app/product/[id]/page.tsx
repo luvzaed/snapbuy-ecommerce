@@ -47,7 +47,7 @@ export default async function ProductDetailsPage({
         className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors mb-10 group"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-        <span className="font-medium">Back to Store</span>
+        <span className="font-medium">Mağazaya Dön</span>
       </Link>
 
       <div className="bg-white dark:bg-[#0a0f1e]/80 backdrop-blur-xl rounded-3xl p-6 lg:p-12 border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-2xl relative overflow-hidden">
@@ -84,18 +84,18 @@ export default async function ProductDetailsPage({
                 ))}
               </div>
               <span className="text-slate-500 dark:text-slate-400 font-medium">
-                4.9 (128 verified reviews)
+                4.9 (128 doğrulanmış yorum)
               </span>
             </div>
 
             <div className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 mb-8">
-              ${product.price.toFixed(2)}
+              ₺{product.price.toFixed(2)}
             </div>
 
             {/* Description Section */}
             <div className="mb-8">
               <h3 className="text-slate-900 dark:text-white font-semibold text-lg mb-3">
-                About this item
+                Bu Ürün Hakkında
               </h3>
               <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed bg-slate-50 dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/5">
                 {product.description}
@@ -107,19 +107,19 @@ export default async function ProductDetailsPage({
               <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-center">
                 <Zap className="w-6 h-6 text-cyan-600 dark:text-cyan-400 mb-2" />
                 <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                  Fast Performance
+                  Hızlı Performans
                 </span>
               </div>
               <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-center">
                 <Battery className="w-6 h-6 text-cyan-600 dark:text-cyan-400 mb-2" />
                 <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                  Long Battery
+                  Uzun Pil Ömrü
                 </span>
               </div>
               <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-center">
                 <Headphones className="w-6 h-6 text-cyan-600 dark:text-cyan-400 mb-2" />
                 <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                  Premium Build
+                  Premium Yapı
                 </span>
               </div>
             </div>
@@ -134,11 +134,11 @@ export default async function ProductDetailsPage({
             <div className="mt-8 flex items-center gap-6 border-t border-slate-200 dark:border-white/10 pt-6">
               <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                 <Truck className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-                <span className="text-sm font-medium">Free Shipping</span>
+                <span className="text-sm font-medium">Ücretsiz Kargo</span>
               </div>
               <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                 <ShieldCheck className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-                <span className="text-sm font-medium">1 Year Warranty</span>
+                <span className="text-sm font-medium">1 Yıl Garanti</span>
               </div>
             </div>
           </div>

@@ -193,7 +193,7 @@ export default function CheckoutPage() {
     if (!shipping.phone.trim()) errs.phone = 'Telefon numarası gerekli';
     if (!shipping.address.trim()) errs.address = 'Adres gerekli';
     if (!shipping.city.trim()) errs.city = 'Şehir gerekli';
-    if (!shipping.state.trim()) errs.state = 'İl/İlçee gerekli';
+    if (!shipping.state.trim()) errs.state = 'İl/İlçe gerekli';
     if (!shipping.zip.trim()) errs.zip = 'Posta kodu gerekli';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -365,7 +365,7 @@ export default function CheckoutPage() {
                     error={errors.city}
                   />
                   <InputField
-                    label="İl/İlçee"
+                    label="İl/İlçe"
                     name="state"
                     value={shipping.state}
                     onChange={(e) =>
@@ -416,7 +416,7 @@ export default function CheckoutPage() {
 
               <div className="space-y-5">
                 <InputField
-                  label="Kart ×œzerindeki İsim"
+                  label="Kart Üzerindeki İsim"
                   name="cardName"
                   value={payment.cardName}
                   onChange={(e) =>
@@ -485,7 +485,7 @@ export default function CheckoutPage() {
                     Güvenli ve Şifreli
                   </p>
                   <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-0.5">
-                    Bu bir demo ödemesidir. Ger×ek ödeme işlemi yapılmaz.
+                    Bu bir demo ödemesidir. Gerçek ödeme işlemi yapılmaz.
                   </p>
                 </div>
               </div>
@@ -545,7 +545,7 @@ export default function CheckoutPage() {
                 <div className="text-slate-600 dark:text-slate-300 text-sm space-y-0.5">
                   <p className="font-medium">{payment.cardName}</p>
                   <p>
-                    •••••••••×€×€×••••••×€×€×••••••••• {payment.cardNumber.replace(/\s/g, '').slice(-4)}
+                    •••• •••• •••• {payment.cardNumber.replace(/\s/g, '').slice(-4)}
                   </p>
                   <p className="text-slate-500 dark:text-slate-400">
                     Son kullanma: {payment.expiry}

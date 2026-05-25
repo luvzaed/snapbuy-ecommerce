@@ -34,14 +34,14 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         setAuthUser(data.user);
-        toast.success('Successfully logged in!');
+        toast.success('Başarıyla giriş yapıldı!');
         router.push('/');
       } else {
         const data = await response.json();
-        setError(data.message || 'Invalid email or password');
+        setError(data.message || 'Geçersiz e-posta veya şifre');
       }
     } catch {
-      setError('Network error, please try again.');
+      setError('Ağ hatası, lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
@@ -58,17 +58,17 @@ export default function LoginPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xl">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Welcome back
+              Tekrar hoş geldiniz
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
-              Sign in to your SnapBuy account
+              SnapBuy hesabınıza giriş yapın
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <FormInput
               id="email"
-              label="Email address"
+              label="E-posta adresi"
               type="email"
               placeholder="you@example.com"
               value={email}
@@ -77,9 +77,9 @@ export default function LoginPage() {
             />
             <FormInput
               id="password"
-              label="Password"
+              label="Şifre"
               type="password"
-              placeholder="Your password"
+              placeholder="Şifreniz"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -101,19 +101,19 @@ export default function LoginPage() {
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
-                  Sign In
+                  Giriş Yap
                 </>
               )}
             </button>
           </form>
 
           <p className="text-center text-slate-600 dark:text-slate-400 text-sm mt-6">
-            Don&apos;t have an account?{' '}
+            Hesabınız yok mu?{' '}
             <Link
               href="/register"
               className="text-cyan-600 hover:text-cyan-700 font-bold transition-colors"
             >
-              Create One
+              Hesap Oluştur
             </Link>
           </p>
         </div>

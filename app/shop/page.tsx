@@ -11,11 +11,11 @@ function ShopContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>(['All']);
+  const [categories, setCategories] = useState<string[]>(['Tümü']);
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('Tümü');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -28,7 +28,7 @@ function ShopContent() {
         const uniqueCategories = Array.from(
           new Set(data.map((p: Product) => p.category)),
         ) as string[];
-        setCategories(['All', ...uniqueCategories]);
+        setCategories(['Tümü', ...uniqueCategories]);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -42,7 +42,7 @@ function ShopContent() {
   useEffect(() => {
     let result = products;
 
-    if (selectedCategory !== 'All') {
+    if (selectedCategory !== 'Tümü') {
       result = result.filter((p) => p.category === selectedCategory);
     }
 
@@ -63,20 +63,21 @@ function ShopContent() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
-            Our{' '}
+            Ürün{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
-              Collection
+              Koleksiyonu
             </span>
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl">
-            Explore our curated selection of premium tech products. Find exactly
-            what you need to elevate your digital lifestyle.
+            Premium teknoloji ürünlerinden özenle seçilmiş koleksiyonumuzu
+            keşfedin. Dijital yaşam tarzınızı yükseltmek için ihtiyacınız olan
+            her şeyi bulun.
           </p>
         </div>
 
         <div className="flex items-center text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl shrink-0 shadow-sm">
           <SlidersHorizontal className="w-4 h-4 mr-2 text-cyan-600 dark:text-cyan-400" />
-          Showing {filteredProducts.length} results
+          {filteredProducts.length} sonuç gösteriliyor
         </div>
       </div>
 
@@ -86,12 +87,12 @@ function ShopContent() {
             <div className="mb-8">
               <h3 className="text-slate-900 dark:text-white font-bold mb-4 flex items-center gap-2">
                 <Search className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                Search
+                Ara
               </h3>
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Find a product..."
+                  placeholder="Ürün bul..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 pl-4 pr-10 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-inner"
@@ -102,7 +103,7 @@ function ShopContent() {
             <div>
               <h3 className="text-slate-900 dark:text-white font-bold mb-4 flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                Categories
+                Kategoriler
               </h3>
               <div className="flex flex-col gap-2">
                 {categories.map((cat) => (
@@ -134,20 +135,20 @@ function ShopContent() {
                 <Search className="w-8 h-8 text-slate-400" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                No products found
+                Ürün bulunamadı
               </h3>
               <p className="text-slate-500 dark:text-slate-400">
-                We could not find any products matching your current filters.
-                Try adjusting your search or category.
+                Mevcut filtrelerinize uygun ürün bulamadık. Aramanızı veya
+                kategorinizi değiştirmeyi deneyin.
               </p>
               <button
                 onClick={() => {
                   setSearchQuery('');
-                  setSelectedCategory('All');
+                  setSelectedCategory('Tümü');
                 }}
                 className="mt-6 px-6 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-bold transition-all"
               >
-                Clear Filters
+                Filtreleri Temizle
               </button>
             </div>
           ) : (
@@ -195,10 +196,10 @@ function ShopContent() {
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex flex-col">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider mb-0.5">
-                          Price
+                          Fiyat
                         </span>
                         <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
-                          ${product.price}
+                          ₺{product.price}
                         </span>
                       </div>
 

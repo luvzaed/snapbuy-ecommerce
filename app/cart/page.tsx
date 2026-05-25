@@ -31,7 +31,7 @@ function CartItemRow({ item }: { item: { product: Product; quantity: number } })
           {item.product.category}
         </p>
         <p className="text-indigo-600 font-bold mt-1">
-          ${item.product.price.toFixed(2)} each
+          ₺{item.product.price.toFixed(2)} / adet
         </p>
       </div>
 
@@ -58,7 +58,7 @@ function CartItemRow({ item }: { item: { product: Product; quantity: number } })
 
       <div className="text-right flex-shrink-0">
         <p className="text-slate-900 dark:text-white font-bold text-lg">
-          ${(item.product.price * item.quantity).toFixed(2)}
+          ₺{(item.product.price * item.quantity).toFixed(2)}
         </p>
         <button
           onClick={() => removeFromCart(item.product.id)}
@@ -90,9 +90,9 @@ export default function CartPage() {
     const success = await placeOrder();
     if (success) {
       setOrderSuccess(true);
-      toast.success('Order placed successfully!');
+      toast.success('Sipariş başarıyla verildi!');
     } else {
-      toast.error('Failed to place order. Please try again.');
+      toast.error('Sipariş verilemedi. Lütfen tekrar deneyin.');
     }
   };
 
@@ -105,23 +105,23 @@ export default function CartPage() {
             <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-            Order Placed Successfully!
+            Sipariş Başarıyla Verildi!
           </h2>
           <p className="text-slate-500 mb-8 max-w-md mx-auto">
-            Thank you for your purchase. You can track your order status in your orders page.
+            Satın aldığınız için teşekkürler. Sipariş durumunuzu siparişlerim sayfasından takip edebilirsiniz.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/orders"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl gradient-brand text-white font-semibold hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/30 transition-all"
             >
-              View My Orders <ArrowRight className="w-5 h-5" />
+              Siparişlerimi Görüntüle <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
               href="/shop"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-all"
             >
-              Continue Shopping
+              Alışverişe Devam Et
             </Link>
           </div>
         </div>
@@ -133,9 +133,9 @@ export default function CartPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center gap-3 mb-10">
         <ShoppingCart className="w-7 h-7 text-indigo-500" />
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Alışveriş Sepeti</h1>
         <span className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-sm font-medium">
-          {cart.length} {cart.length === 1 ? 'item' : 'items'}
+          {cart.length} ürün
         </span>
       </div>
 
@@ -143,16 +143,16 @@ export default function CartPage() {
         <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-16 text-center">
           <ShoppingBag className="w-16 h-16 text-slate-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-            Your cart is empty
+            Sepetiniz boş
           </h2>
           <p className="text-slate-500 mb-8">
-            Add some amazing products to get started
+            Başlamak için harika ürünler ekleyin
           </p>
           <Link
             href="/shop"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl gradient-brand text-white font-semibold hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/30 transition-all"
           >
-            Browse Products <ArrowRight className="w-5 h-5" />
+            Ürünlere Göz At <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       ) : (
@@ -167,27 +167,27 @@ export default function CartPage() {
           {/* Summary */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl p-6 h-fit sticky top-20">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">
-              Order Summary
+              Sipariş Özeti
             </h2>
             <div className="flex flex-col gap-3 mb-6">
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                <span>Subtotal</span>
-                <span className="font-medium">${total.toFixed(2)}</span>
+                <span>Ara Toplam</span>
+                <span className="font-medium">₺{total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                <span>Shipping</span>
-                <span className="text-emerald-600 font-medium">Free</span>
+                <span>Kargo</span>
+                <span className="text-emerald-600 font-medium">Ücretsiz</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                <span>Tax (8%)</span>
+                <span>Vergi (%8)</span>
                 <span className="font-medium">
-                  ${(total * 0.08).toFixed(2)}
+                  ₺{(total * 0.08).toFixed(2)}
                 </span>
               </div>
               <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between text-slate-900 dark:text-white font-bold text-lg">
-                <span>Total</span>
+                <span>Toplam</span>
                 <span className="text-gradient">
-                  ${(total * 1.08).toFixed(2)}
+                  ₺{(total * 1.08).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -199,16 +199,16 @@ export default function CartPage() {
               {isCheckingOut ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Processing...
+                  İşleniyor...
                 </>
               ) : user ? (
                 <>
-                  Place Order
+                  Siparişi Ver
                   <ArrowRight className="w-5 h-5" />
                 </>
               ) : (
                 <>
-                  Login to Checkout
+                  Ödeme için Giriş Yap
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -219,9 +219,9 @@ export default function CartPage() {
                   href="/login"
                   className="text-indigo-600 font-medium hover:underline"
                 >
-                  Sign in
+                  Giriş yap
                 </Link>{' '}
-                to complete your purchase
+                — alışverişinizi tamamlamak için
               </p>
             )}
           </div>

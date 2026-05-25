@@ -28,12 +28,12 @@ export default function AddToCartButton({ product }: { product: Product }) {
       {added ? (
         <>
           <Check className="w-5 h-5" />
-          Added to Cart!
+          Sepete Eklendi!
         </>
       ) : (
         <>
           <ShoppingCart className="w-5 h-5" />
-          {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+          {product.stock > 0 ? 'Sepete Ekle' : 'Stokta Yok'}
         </>
       )}
     </button>
