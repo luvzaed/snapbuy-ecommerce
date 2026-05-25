@@ -15,10 +15,6 @@ const eslintConfig = defineConfig([
     // Python virtual environment (third-party, not app code)
     ".venv/**",
     "**/.venv/**",
-    // One-off recovery scripts (not part of the app)
-    "extract-transcript.mjs",
-    "fix-spaces.mjs",
-    "restore-from-history.mjs",
   ]),
 ]);
 
