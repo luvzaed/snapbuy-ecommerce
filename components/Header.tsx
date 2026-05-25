@@ -207,7 +207,7 @@ export default function Header() {
                         <Link
                           href="/orders"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:text-cyan-600 hover:bg-slate-50 transition-all font-medium"
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                         >
                           <Package className="w-4 h-4 text-cyan-500" />
                           Siparişlerim
@@ -216,7 +216,7 @@ export default function Header() {
                         <Link
                           href="/dashboard"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:text-cyan-600 hover:bg-slate-50 transition-all font-medium"
+                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                         >
                           <LayoutDashboard className="w-4 h-4 text-cyan-500" />
                           Panelim
