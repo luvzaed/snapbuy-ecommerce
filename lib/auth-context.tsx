@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Order, CartItem, Product } from './types';
+import toast from 'react-hot-toast';
 
 // Aliases for missing types
 export type AuthOrder = Order;
@@ -54,10 +55,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const addToCart = (product: Product) => {
+    const existing = cart.find((item) => item.product.id === product.id);
+    const currentQty = existing ? existing.quantity : 0;
+    // Enforce stock limit: never add more than what's in stock
+    if (currentQty >= product.stock) {
+      toast.error(
+        product.stock > 0
+          ? `Stokta yalnızca ${product.stock} adet var`
+          : 'Bu ürün stokta yok',
+      );
+      return;
+    }
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      const updated = existing
-        ? prev.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
+      const ex = prev.find((item) => item.product.id === product.id);
+      const updated = ex
+        ? prev.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
+              : item,
+          )
         : [...prev, { product, quantity: 1 }];
       localStorage.setItem('shop_cart', JSON.stringify(updated));
       return updated;
@@ -80,7 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return updated;
       }
       const updated = prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item,
+        item.product.id === productId
+          ? { ...item, quantity: Math.min(quantity, item.product.stock) }
+          : item,
       );
       localStorage.setItem('shop_cart', JSON.stringify(updated));
       return updated;

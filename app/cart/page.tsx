@@ -30,8 +30,11 @@ function CartItemRow({ item }: { item: { product: Product; quantity: number } })
         <p className="text-slate-500 text-sm">
           {item.product.category}
         </p>
-        <p className="text-indigo-600 font-bold mt-1">
+        <p className="text-indigo-600 dark:text-indigo-400 font-bold mt-1">
           ₺{item.product.price.toFixed(2)} / adet
+        </p>
+        <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">
+          Stokta {item.product.stock} adet
         </p>
       </div>
 
@@ -49,7 +52,8 @@ function CartItemRow({ item }: { item: { product: Product; quantity: number } })
         </span>
         <button
           onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-          className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all active:scale-90"
+          disabled={item.quantity >= item.product.stock}
+          className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800 disabled:hover:text-slate-600"
           aria-label="Increase quantity"
         >
           <Plus className="w-3.5 h-3.5" />
