@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { Package, LogOut, User, CheckCircle2, Clock, Truck, MapPin, type LucideIcon } from "lucide-react";
+import { Package, LogOut, User, CheckCircle2, Clock, Truck, MapPin, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 const statusConfig: Record<string, { icon: LucideIcon; color: string; bg: string; border: string; label: string }> = {
@@ -69,7 +69,7 @@ export default function DashboardPage() {
         </div>
         <div className="gradient-card border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-pink-600/20 border border-pink-500/30 flex items-center justify-center">
-            <DollarSign className="w-6 h-6 text-pink-400" />
+            <Wallet className="w-6 h-6 text-pink-400" />
           </div>
           <div>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">₺{orders.reduce((s, o) => s + o.total, 0).toFixed(2)}</p>
@@ -137,14 +137,6 @@ function ShoppingBag({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
-  );
-}
-
-function DollarSign({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   );
 }

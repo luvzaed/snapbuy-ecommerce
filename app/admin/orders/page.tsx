@@ -13,7 +13,7 @@ import {
   User,
   Mail,
   Hash,
-  DollarSign,
+  Wallet,
   ShoppingBag,
   RefreshCw,
 } from 'lucide-react';
@@ -238,7 +238,7 @@ export default function AdminOrdersPage() {
         </div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-green-500" />
+            <Wallet className="w-4 h-4 text-green-500" />
             <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Gelir</span>
           </div>
           <p className="text-2xl font-bold text-green-600">₺{stats.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
