@@ -1,7 +1,14 @@
+'use client';
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Github, Twitter, Instagram, Linkedin } from "lucide-react";
 
 export default function Footer() {
+  const pathname = usePathname();
+  // Admin area has its own dedicated layout — hide the storefront footer there
+  if (pathname.startsWith('/admin')) return null;
+
   return (
     <footer className="mt-20 border-t border-slate-200 dark:border-white/[0.07] bg-slate-100 dark:bg-[#030712] relative overflow-hidden">
       {/* Subtle gradient top */}

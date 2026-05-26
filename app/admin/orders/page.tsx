@@ -9,7 +9,6 @@ import {
   Truck,
   CheckCircle2,
   Loader2,
-  ArrowLeft,
   ChevronDown,
   User,
   Mail,
@@ -18,7 +17,6 @@ import {
   ShoppingBag,
   RefreshCw,
 } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 
@@ -179,16 +177,10 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <Link
-            href="/admin"
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">
               Sipariş <span className="text-gradient">Yönetimi</span>

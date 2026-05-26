@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react'; // CHANGED: added useRef for file input
-import { Edit2, Trash2, Loader2, Plus, Package, ArrowLeft, Upload, X } from 'lucide-react'; // CHANGED: added Upload, X icons
+import { Edit2, Trash2, Loader2, Plus, Package, Upload, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Product } from '@/lib/types';
 
@@ -217,15 +216,9 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link
-          href="/admin"
-          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">
             Ürün <span className="text-gradient">Yönetimi</span>

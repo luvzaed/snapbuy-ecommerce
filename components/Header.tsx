@@ -85,6 +85,9 @@ export default function Header() {
     setMenuOpen(false);
   };
 
+  // Admin area has its own dedicated layout — hide the storefront header there
+  if (pathname.startsWith('/admin')) return null;
+
   return (
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
