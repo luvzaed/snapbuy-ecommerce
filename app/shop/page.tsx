@@ -15,7 +15,7 @@ function ShopContent() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState('Tümü');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'Tümü');
 
   useEffect(() => {
     const fetchProducts = async () => {
