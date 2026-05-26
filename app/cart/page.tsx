@@ -116,7 +116,7 @@ export default function CartPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/orders"
+              href="/dashboard"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl gradient-brand text-white font-semibold hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/30 transition-all"
             >
               Siparişlerimi Görüntüle <ArrowRight className="w-5 h-5" />

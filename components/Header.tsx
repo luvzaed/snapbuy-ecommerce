@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Search,
   UserCircle,
-  Package,
   LayoutDashboard,
   LogOut,
   Shield,
@@ -208,15 +207,6 @@ export default function Header() {
                         </Link>
 
                         <Link
-                          href="/orders"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
-                        >
-                          <Package className="w-4 h-4 text-cyan-500" />
-                          Siparişlerim
-                        </Link>
-
-                        <Link
                           href="/dashboard"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
@@ -363,13 +353,6 @@ export default function Header() {
                     onClick={() => setMenuOpen(false)}
                   >
                     <UserCircle className="w-5 h-5 text-cyan-500" /> Profil
-                  </Link>
-                  <Link
-                    href="/orders"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <Package className="w-5 h-5 text-cyan-500" /> Siparişlerim
                   </Link>
                   <Link
                     href="/dashboard"

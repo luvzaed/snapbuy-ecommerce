@@ -186,7 +186,7 @@ export default function OrderConfirmationPage() {
       {/* Action Buttons */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center animate-fade-in-up" style={{ animationDelay: '0.45s' }}>
         <Link
-          href="/orders"
+          href="/dashboard"
           className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl gradient-brand text-white font-semibold hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/30 transition-all"
         >
           Siparişlerime Git
