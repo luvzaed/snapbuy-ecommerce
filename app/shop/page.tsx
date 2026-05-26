@@ -83,7 +83,7 @@ function ShopContent() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-1/4 shrink-0 space-y-8">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl p-6 sticky top-28">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl p-6">
             <div className="mb-8">
               <h3 className="text-slate-900 dark:text-white font-bold mb-4 flex items-center gap-2">
                 <Search className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
