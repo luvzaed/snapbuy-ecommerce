@@ -16,6 +16,7 @@ import {
   Wallet,
   ShoppingBag,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
@@ -98,18 +99,19 @@ const statusConfig: Record<
 const statusOrder = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
 
 export default function AdminOrdersPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!authLoading && (!user || user.role !== 'admin')) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [authLoading, user, router]);
 
   const fetchAllOrders = async () => {
     setIsLoading(true);
@@ -156,6 +158,24 @@ export default function AdminOrdersPage() {
       toast.error('Failed to update order status');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: number) => {
+    if (!confirm(`Sipariş #${orderId} silinsin mi? Bu işlem geri alınamaz.`)) return;
+    setDeletingId(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        toast.success(`Sipariş #${orderId} silindi`);
+      } else {
+        toast.error('Sipariş silinemedi');
+      }
+    } catch {
+      toast.error('Sipariş silinemedi');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -347,7 +367,7 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="text-2xl font-bold text-gradient">₺{order.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       <p className="text-slate-500 text-xs mt-0.5">{order.items.length} ürün</p>
@@ -375,6 +395,20 @@ export default function AdminOrdersPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Delete button */}
+                    <button
+                      onClick={() => handleDeleteOrder(order.id)}
+                      disabled={deletingId === order.id}
+                      title="Siparişi Sil"
+                      className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-500 dark:text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingId === order.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
                   </div>
                 </div>
 

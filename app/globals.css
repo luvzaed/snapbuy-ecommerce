@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 /* Enable class-based dark mode for Tailwind v4 */
@@ -9,6 +10,12 @@
   --color-secondary: #3b82f6;
   --color-accent: #8b5cf6;
   --font-sans: "Inter", system-ui, sans-serif;
+}
+
+/* Monospace numerals for prices, used site-wide for consistent number styling */
+.font-mono-price {
+  font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  font-feature-settings: 'tnum';
 }
 
 @layer base {

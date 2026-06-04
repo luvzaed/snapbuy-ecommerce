@@ -1,0 +1,94 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+INFO:     Started server process [25468]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[*] Loading CLIP model...
+[OK] Model loaded on cpu
+[OK] Loaded embeddings for 22 products
+[OK] Index ready: 22 products, matrix (22, 512)
+
+[*] Starting Visual Search Server on http://localhost:8000
+    Products indexed: 22
+    Top-K results: 3
+    Device: cpu
+    Press Ctrl+C to stop
+
+INFO:     127.0.0.1:61705 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49688 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63753 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55465 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63401 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58510 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49668 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61253 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63101 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52237 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56512 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59790 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61018 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50709 - "POST /search HTTP/1.1" 200 OK
+[OK] Index ready: 21 products, matrix (21, 512)
+[OK] Reindex complete - in_db=23 indexed=21 added=0 reused=21 removed=1 failed=2
+INFO:     127.0.0.1:55649 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 21 products, matrix (21, 512)
+[OK] Reindex complete - in_db=22 indexed=21 added=0 reused=21 removed=0 failed=1
+INFO:     127.0.0.1:55649 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 20 products, matrix (20, 512)
+[OK] Reindex complete - in_db=21 indexed=20 added=0 reused=20 removed=1 failed=1
+INFO:     127.0.0.1:55649 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 19 products, matrix (19, 512)
+[OK] Reindex complete - in_db=20 indexed=19 added=0 reused=19 removed=1 failed=1
+INFO:     127.0.0.1:55649 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 18 products, matrix (18, 512)
+[OK] Reindex complete - in_db=19 indexed=18 added=0 reused=18 removed=1 failed=1
+INFO:     127.0.0.1:55649 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 17 products, matrix (17, 512)
+[OK] Reindex complete - in_db=18 indexed=17 added=0 reused=17 removed=1 failed=1
+INFO:     127.0.0.1:59322 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 16 products, matrix (16, 512)
+[OK] Reindex complete - in_db=17 indexed=16 added=0 reused=16 removed=1 failed=1
+INFO:     127.0.0.1:59328 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 15 products, matrix (15, 512)
+[OK] Reindex complete - in_db=16 indexed=15 added=0 reused=15 removed=1 failed=1
+INFO:     127.0.0.1:59328 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 14 products, matrix (14, 512)
+[OK] Reindex complete - in_db=15 indexed=14 added=0 reused=14 removed=1 failed=1
+INFO:     127.0.0.1:50654 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 15 products, matrix (15, 512)
+[OK] Reindex complete - in_db=16 indexed=15 added=1 reused=14 removed=0 failed=1
+INFO:     127.0.0.1:52765 - "POST /reindex HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55583 - "POST /search HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51276 - "POST /search HTTP/1.1" 200 OK
+[OK] Index ready: 14 products, matrix (14, 512)
+[OK] Reindex complete - in_db=15 indexed=14 added=0 reused=14 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 13 products, matrix (13, 512)
+[OK] Reindex complete - in_db=14 indexed=13 added=0 reused=13 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 12 products, matrix (12, 512)
+[OK] Reindex complete - in_db=13 indexed=12 added=0 reused=12 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 11 products, matrix (11, 512)
+[OK] Reindex complete - in_db=12 indexed=11 added=0 reused=11 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 10 products, matrix (10, 512)
+[OK] Reindex complete - in_db=11 indexed=10 added=0 reused=10 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 9 products, matrix (9, 512)
+[OK] Reindex complete - in_db=10 indexed=9 added=0 reused=9 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 8 products, matrix (8, 512)
+[OK] Reindex complete - in_db=9 indexed=8 added=0 reused=8 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 7 products, matrix (7, 512)
+[OK] Reindex complete - in_db=8 indexed=7 added=0 reused=7 removed=1 failed=1
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 7 products, matrix (7, 512)
+[OK] Reindex complete - in_db=7 indexed=7 added=0 reused=7 removed=0 failed=0
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+[OK] Index ready: 6 products, matrix (6, 512)
+[OK] Reindex complete - in_db=6 indexed=6 added=0 reused=6 removed=1 failed=0
+INFO:     127.0.0.1:49670 - "POST /reindex HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57143 - "POST /search HTTP/1.1" 200 OK

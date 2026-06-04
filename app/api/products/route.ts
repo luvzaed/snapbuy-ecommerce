@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { getSession, isAdmin } from "@/lib/api-auth";
+import { triggerVisualSearchReindex } from "@/lib/reindex";
 
 // Save an uploaded image File to /public/images/products and return its public path
 async function saveUploadedImage(file: File): Promise<string> {
@@ -26,8 +28,15 @@ export async function GET() {
   }
 }
 
-// POST /api/products — create a new product (accepts multipart file upload OR JSON)
+// POST /api/products — create a new product (admin only; accepts multipart file upload OR JSON)
 export async function POST(req: NextRequest) {
+  const session = getSession(req);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isAdmin(session)) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
   try {
     const contentType = req.headers.get("content-type") || "";
     let name = "";
@@ -77,6 +86,9 @@ export async function POST(req: NextRequest) {
         category: category || "General",
       },
     });
+
+    // Make the new product searchable by visual search (non-blocking).
+    triggerVisualSearchReindex(`create product #${product.id}`);
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {

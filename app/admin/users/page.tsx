@@ -30,7 +30,7 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,10 +40,10 @@ export default function AdminUsersPage() {
   const [filterRole, setFilterRole] = useState<string>('ALL');
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!authLoading && (!user || user.role !== 'admin')) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     if (user?.role === 'admin') {

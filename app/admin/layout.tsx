@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 lg:flex">
       {/* ── Sidebar ── */}
-      <aside className="lg:w-64 lg:shrink-0 bg-white dark:bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 lg:min-h-screen lg:sticky lg:top-0 lg:flex lg:flex-col">
+      <aside className="lg:w-64 lg:shrink-0 bg-white dark:bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 lg:h-screen lg:sticky lg:top-0 lg:flex lg:flex-col">
         {/* Brand */}
         <div className="px-5 py-5 flex items-center gap-2.5 border-b border-slate-200 dark:border-slate-800">
           <div className="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center shadow-md shadow-indigo-500/20">
@@ -48,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Nav */}
-        <nav className="p-3 flex lg:flex-col gap-1 overflow-x-auto lg:flex-1">
+        <nav className="p-3 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:flex-1">
           {NAV.map((item) => {
             const Icon = item.icon;
             const active = item.exact

@@ -16,12 +16,13 @@ import {
   EyeOff,
   Loader2,
   Package,
+  LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
-  const { user, cart, setAuthUser, orders, fetchOrders } = useAuth();
+  const { user, loading, cart, setAuthUser, orders, fetchOrders, logout } = useAuth();
   const router = useRouter();
 
   // Edit state
@@ -44,8 +45,8 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!user) router.push('/login');
-  }, [user, router]);
+    if (!loading && !user) router.push('/login');
+  }, [loading, user, router]);
 
   useEffect(() => {
     if (user) {
@@ -62,7 +63,8 @@ export default function ProfilePage() {
     const errs: Record<string, string> = {};
     if (!editName.trim()) errs.name = 'İsim gerekli';
     if (!editEmail.trim()) errs.email = 'E-posta gerekli';
-    if (editEmail && !/\S+@\S+\.\S+/.test(editEmail)) errs.email = 'Geçerli bir e-posta girin';
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!EMAIL_RE.test(editEmail.trim())) errs.email = 'Geçersiz e-posta adresi';
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -99,7 +101,8 @@ export default function ProfilePage() {
     const errs: Record<string, string> = {};
     if (!currentPassword) errs.currentPassword = 'Mevcut şifre gerekli';
     if (!newPassword) errs.newPassword = 'Yeni şifre gerekli';
-    if (newPassword.length < 6) errs.newPassword = 'Şifre en az 6 karakter olmalı';
+    else if (newPassword.length < 8) errs.newPassword = 'Şifre en az 8 karakter olmalı';
+    else if (newPassword === currentPassword) errs.newPassword = 'Yeni şifre, mevcut şifre ile aynı olamaz.';
     if (newPassword !== confirmPassword) errs.confirmPassword = 'Şifreler eşleşmiyor';
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
@@ -123,6 +126,8 @@ export default function ProfilePage() {
         const data = await res.json();
         if (data.error === 'Current password is incorrect') {
           setErrors({ currentPassword: 'Mevcut şifre yanlış' });
+        } else if (data.error === 'Yeni şifre, mevcut şifre ile aynı olamaz.') {
+          setErrors({ newPassword: data.error });
         } else {
           toast.error(data.error || 'Şifre değiştirilemedi');
         }
@@ -399,7 +404,7 @@ export default function ProfilePage() {
                     type={showNewPw ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Yeni şifre girin (en az 6 karakter)"
+                    placeholder="Yeni şifre girin (en az 8 karakter)"
                     className={`w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all ${
                       errors.newPassword
                         ? 'border-red-400'
@@ -488,7 +493,7 @@ export default function ProfilePage() {
             href="/dashboard"
             className="flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-400 transition-all"
           >
-            Kontrol Paneli
+            Siparişlerim
           </Link>
           <Link
             href="/shop"
@@ -498,6 +503,15 @@ export default function ProfilePage() {
           </Link>
         </div>
       </div>
+
+      {/* ── Logout ───────────────────────────────────────────── */}
+      <button
+        onClick={() => { logout(); router.push('/'); }}
+        className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-all mt-2"
+      >
+        <LogOut className="w-4 h-4" />
+        Çıkış Yap
+      </button>
     </div>
   );
 }

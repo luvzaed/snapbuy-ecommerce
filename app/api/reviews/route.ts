@@ -55,7 +55,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
     }
 
-    // Upsert: create new review or update existing one (one review per user per product)
+    // Comment is required and must not be empty
+    const trimmedComment = typeof comment === "string" ? comment.trim() : "";
+    if (!trimmedComment) {
+      return NextResponse.json({ error: "Comment is required" }, { status: 400 });
+    }
+
+    // Any logged-in user may review (one review per user per product).
+    // This is the source of truth — if it fails, the request fails.
     const review = await prisma.review.upsert({
       where: {
         userId_productId: {
@@ -65,13 +72,13 @@ export async function POST(req: NextRequest) {
       },
       update: {
         rating: Number(rating),
-        comment: comment || null,
+        comment: trimmedComment,
       },
       create: {
         userId: Number(userId),
         productId: Number(productId),
         rating: Number(rating),
-        comment: comment || null,
+        comment: trimmedComment,
       },
       include: {
         user: {
@@ -80,9 +87,48 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Sync the denormalised rating cache on Product so that ProductCard and
+    // any listing reading product.rating / product.reviewCount reflects the
+    // new review immediately. This is BEST-EFFORT — if the sync fails for any
+    // reason (stale Prisma client, transient DB error, etc.) we log it but
+    // still return the saved review. The review itself is already persisted.
+    try {
+      const aggregate = await prisma.review.aggregate({
+        where: { productId: Number(productId) },
+        _avg: { rating: true },
+        _count: { _all: true },
+      });
+
+      await prisma.product.update({
+        where: { id: Number(productId) },
+        data: {
+          rating: aggregate._avg.rating ?? null,
+          reviewCount: aggregate._count._all,
+        },
+      });
+    } catch (syncError) {
+      // Non-fatal: the review was already saved. Surface enough detail in the
+      // server logs to diagnose, then continue and return success.
+      console.error(
+        "[reviews POST] Product rating sync failed (review was still saved):",
+        syncError instanceof Error ? syncError.message : syncError,
+      );
+      if (syncError instanceof Error && syncError.stack) {
+        console.error(syncError.stack);
+      }
+    }
+
     return NextResponse.json(review, { status: 201 });
   } catch (error) {
-    console.error("Error creating review:", error);
+    // Log full detail so the actual Prisma/SQL error shows up in the dev logs
+    // instead of a generic "Failed to create review".
+    console.error("[reviews POST] Error creating review:");
+    if (error instanceof Error) {
+      console.error("  message:", error.message);
+      console.error("  stack:", error.stack);
+    } else {
+      console.error("  raw:", error);
+    }
     return NextResponse.json({ error: "Failed to create review" }, { status: 500 });
   }
 }

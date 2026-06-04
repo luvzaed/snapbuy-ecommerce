@@ -2,19 +2,32 @@
 AI Visual Search Server - FastAPI + CLIP
 
 Endpoints:
-    GET  /health  -> Health check
-    POST /search  -> Upload image, get matching products
+    GET  /health   -> Health check (reports how many products are indexed)
+    POST /search   -> Upload image, get matching products
+    POST /reindex  -> Rebuild the embedding index from the current database state
 
 Usage:
     cd visual-search-server
     python main.py
+
+Indexing model
+--------------
+The index maps product_id -> CLIP image embedding. It is built from the same
+Postgres/Supabase database the Next.js app uses (so names/categories stay in
+sync) and supports images stored either as remote URLs or as local uploads in
+the Next.js public/ folder. See indexer.py for details.
+
+The index is loaded from embeddings/products.pkl at startup and can be rebuilt
+at runtime via POST /reindex (which the admin product API calls automatically
+on create/edit/delete), so newly added products become searchable without a
+manual script run or server restart.
 """
 
-import os
 import sys
 import io
-import pickle
 import base64
+import threading
+
 import torch
 import open_clip
 import numpy as np
@@ -24,13 +37,23 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import indexer
+
 # Fix Windows console encoding for Unicode
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # -- Config -------------------------------------------------------------------
 TOP_K = 3  # Number of results to return (change this to show more/fewer)
-EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), 'embeddings', 'products.pkl')
+
+# Minimum cosine similarity (0.0–1.0) a product must reach to appear in results.
+# CLIP cosine scores are in this range; we display them as percentages (×100).
+#
+#   Raise (e.g. 0.65): stricter — only near-identical products show up.
+#   Lower (e.g. 0.45): looser — more results but more irrelevant ones.
+#   0.55 (55%) is a good starting point: catches the same model/colour, filters
+#   out unrelated categories (e.g. a speaker when you uploaded a phone).
+SIMILARITY_THRESHOLD = 0.55
 
 # -- Load CLIP Model ----------------------------------------------------------
 print("[*] Loading CLIP model...")
@@ -41,31 +64,51 @@ model, _, preprocess = open_clip.create_model_and_transforms(
 model.eval()
 print(f"[OK] Model loaded on {device}")
 
-# -- Load Product Embeddings --------------------------------------------------
-if not os.path.exists(EMBEDDINGS_PATH):
-    print(f"[WARN] No embeddings found at {EMBEDDINGS_PATH}")
-    print("       Run `python generate_embeddings.py` first!")
-    product_embeddings = {}
-else:
-    with open(EMBEDDINGS_PATH, 'rb') as f:
-        product_embeddings = pickle.load(f)
-    print(f"[OK] Loaded embeddings for {len(product_embeddings)} products")
+# -- In-memory index state ----------------------------------------------------
+# These three globals are rebound together (under _index_lock) whenever the
+# index changes, so readers in /search see a consistent snapshot.
+product_embeddings: dict = {}
+product_ids: list = []
+embedding_matrix: np.ndarray = np.array([])
+_index_lock = threading.Lock()
 
-# -- Build embedding matrix for fast similarity search -------------------------
-product_ids = []
-embedding_matrix = []
-for pid, data in product_embeddings.items():
-    product_ids.append(pid)
-    embedding_matrix.append(data['embedding'])
 
-if embedding_matrix:
-    embedding_matrix = np.stack(embedding_matrix)
-    print(f"[OK] Embedding matrix shape: {embedding_matrix.shape}")
+def _rebuild_matrix(embeddings: dict):
+    """Turn an embeddings dict into a (product_ids, stacked_matrix) pair."""
+    ids = []
+    rows = []
+    for pid, data in embeddings.items():
+        ids.append(pid)
+        rows.append(data['embedding'])
+    matrix = np.stack(rows) if rows else np.array([])
+    return ids, matrix
+
+
+def _apply_index(embeddings: dict):
+    """Atomically swap the in-memory index to the given embeddings dict."""
+    global product_embeddings, product_ids, embedding_matrix
+    ids, matrix = _rebuild_matrix(embeddings)
+    with _index_lock:
+        product_embeddings = embeddings
+        product_ids = ids
+        embedding_matrix = matrix
+    if matrix.size:
+        print(f"[OK] Index ready: {len(ids)} products, matrix {matrix.shape}")
+    else:
+        print("[WARN] Index is empty")
+
+
+# Load whatever was previously persisted to disk at startup.
+_initial = indexer.load_index()
+if _initial:
+    print(f"[OK] Loaded embeddings for {len(_initial)} products")
 else:
-    embedding_matrix = np.array([])
+    print(f"[WARN] No embeddings found at {indexer.EMBEDDINGS_PATH}")
+    print("       The index is empty - POST /reindex or run generate_embeddings.py")
+_apply_index(_initial)
 
 # -- FastAPI App ---------------------------------------------------------------
-app = FastAPI(title="NexaShop Visual Search", version="1.0.0")
+app = FastAPI(title="NexaShop Visual Search", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -97,12 +140,50 @@ def health_check():
     }
 
 
+@app.post("/reindex")
+def reindex():
+    """Rebuild the embedding index from the current database state.
+
+    Reuses cached embeddings for products whose image hasn't changed, so only
+    new/changed images are downloaded and encoded. Deleted products drop out.
+    Called automatically by the admin product API on create/edit/delete.
+    """
+    try:
+        # Snapshot the current embeddings so unchanged products can be reused.
+        with _index_lock:
+            current = dict(product_embeddings)
+
+        embeddings, stats = indexer.build_index(
+            model, preprocess, device, existing=current
+        )
+        indexer.save_index(embeddings)
+        _apply_index(embeddings)
+
+        print(
+            f"[OK] Reindex complete - in_db={stats['total_in_db']} "
+            f"indexed={stats['indexed']} added={stats['added']} "
+            f"reused={stats['reused']} removed={stats['removed']} "
+            f"failed={len(stats['failed'])}"
+        )
+        return {"status": "ok", **stats}
+    except Exception as e:
+        print(f"[ERROR] Reindex failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Reindex failed: {str(e)}")
+
+
 @app.post("/search")
 def search_by_image(request: SearchRequest):
-    if len(embedding_matrix) == 0:
+    # Snapshot the index under the lock so a concurrent /reindex can't swap it
+    # mid-search.
+    with _index_lock:
+        ids = product_ids
+        matrix = embedding_matrix
+        embeddings = product_embeddings
+
+    if len(matrix) == 0:
         raise HTTPException(
             status_code=503,
-            detail="No product embeddings loaded. Run generate_embeddings.py first."
+            detail="No product embeddings loaded. POST /reindex or run generate_embeddings.py first."
         )
 
     try:
@@ -123,16 +204,20 @@ def search_by_image(request: SearchRequest):
             query_embedding = query_embedding.cpu().numpy().flatten()
 
         # -- Compute cosine similarities ---------------------------------------
-        similarities = np.dot(embedding_matrix, query_embedding)
+        similarities = np.dot(matrix, query_embedding)
 
         # Get top K results
         top_indices = np.argsort(similarities)[::-1][:TOP_K]
 
         results = []
         for idx in top_indices:
-            pid = product_ids[idx]
+            pid = ids[idx]
             score = float(similarities[idx])
-            product_data = product_embeddings[pid]
+            # Skip products that don't meet the minimum similarity threshold.
+            # This prevents weak/irrelevant matches from showing up in results.
+            if score < SIMILARITY_THRESHOLD:
+                continue
+            product_data = embeddings[pid]
             results.append(SearchResult(
                 product_id=pid,
                 similarity=round(score * 100, 1),  # Convert to percentage
@@ -140,6 +225,8 @@ def search_by_image(request: SearchRequest):
                 category=product_data['category'],
             ))
 
+        # Return whatever passed the threshold (may be empty — the frontend
+        # handles the empty-results case with a Turkish "no match" message).
         return {"results": results}
 
     except Exception as e:

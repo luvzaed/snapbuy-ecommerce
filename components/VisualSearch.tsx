@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   RefreshCw,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Product } from "@/lib/types";
 
@@ -36,6 +37,26 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  /* ── modal lifecycle: scroll-lock + Escape-to-close ── */
+  useEffect(() => {
+    // Prevent the page behind the modal from scrolling while it's open.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    // Close on Escape (accessibility / standard modal behaviour).
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      // Always restore scroll and remove the listener when the modal unmounts,
+      // regardless of how it was closed (X button, backdrop click, or Escape).
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   /* ── cleanup camera on unmount / tab switch ── */
   const stopCamera = useCallback(() => {
@@ -131,23 +152,31 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
     setError(null);
   };
 
-  return (
+  // Render via a portal so position:fixed is anchored to the real viewport.
+  // Without this, the Header's `backdrop-filter: blur(...)` (applied when
+  // scrolled) creates a new CSS containing block, which causes fixed children
+  // to be positioned relative to the header instead of the screen — the modal
+  // appears at the correct document offset rather than the viewport center.
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     /* Backdrop */
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      {/* Blurred dark backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+      {/* Blurred dark backdrop — pointer-events-none so clicks pass through to the
+          outer fixed div, where e.target === e.currentTarget fires onClose() */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md pointer-events-none" />
 
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-lg animate-fade-in-up">
+      {/* Modal — capped to 90vh so it never overflows the viewport */}
+      <div className="relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col animate-fade-in-up">
         {/* Glow border wrapper */}
-        <div className="relative rounded-3xl p-px" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.5), rgba(59,130,246,0.3), rgba(139,92,246,0.4))" }}>
-          <div className="glass rounded-3xl overflow-hidden" style={{ background: "#0d1424" }}>
+        <div className="relative rounded-3xl p-px flex flex-col min-h-0" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.5), rgba(59,130,246,0.3), rgba(139,92,246,0.4))" }}>
+          <div className="glass rounded-3xl overflow-hidden flex flex-col min-h-0" style={{ background: "#0d1424" }}>
 
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.07]">
+            {/* Header — always visible */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.07] flex-shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center">
                   <ScanSearch className="w-4 h-4 text-white" />
@@ -165,8 +194,8 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
               </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-1 p-3 mx-6 mt-4 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+            {/* Tabs — always visible */}
+            <div className="flex gap-1 p-3 mx-6 mt-4 rounded-xl bg-white/[0.04] border border-white/[0.06] flex-shrink-0">
               {(["upload", "camera"] as Tab[]).map((t) => (
                 <button
                   key={t}
@@ -183,11 +212,11 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
               ))}
             </div>
 
-            {/* Body */}
-            <div className="p-6 pt-4">
+            {/* Body — grows to fill leftover space; tabs and header are pinned above */}
+            <div className="flex-1 flex flex-col min-h-0 p-6 pt-4">
               {/* ── UPLOAD TAB ── */}
               {tab === "upload" && (
-                <div>
+                <div className="flex flex-col flex-1 min-h-0">
                   {!preview ? (
                     <div
                       className="relative border-2 border-dashed border-white/[0.12] rounded-2xl p-10 text-center cursor-pointer hover:border-cyan-500/40 hover:bg-cyan-500/[0.03] transition-all duration-300 group"
@@ -225,7 +254,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
 
               {/* ── CAMERA TAB ── */}
               {tab === "camera" && (
-                <div>
+                <div className="flex flex-col flex-1 min-h-0">
                   {cameraError && (
                     <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm text-center">
                       {cameraError}
@@ -289,7 +318,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                       </div>
                     )
                   ) : (
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-col flex-1 min-h-0">
                       <PreviewSection
                         preview={preview}
                         searchState={searchState}
@@ -307,7 +336,8 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -330,8 +360,9 @@ function PreviewSection({
   onClose: () => void;
 }) {
   return (
-    <div>
-      <div className="relative rounded-2xl overflow-hidden border border-white/[0.07] mb-4">
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Preview image — always visible, never shrinks away */}
+      <div className="relative rounded-2xl overflow-hidden border border-white/[0.07] mb-4 flex-shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={preview} alt="Önizleme" className="w-full object-cover max-h-52" />
         <button
@@ -359,7 +390,7 @@ function PreviewSection({
       )}
 
       {searchState === "done" && (
-        <div className="space-y-3">
+        <div className="flex flex-col flex-1 min-h-0 gap-3">
           {error ? (
             <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm font-medium">
               <X className="w-4 h-4 flex-shrink-0" />
@@ -375,7 +406,7 @@ function PreviewSection({
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {results.length} benzer ürün bulundu
               </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
                 {results.map((p) => (
                   <Link
                     key={p.id}

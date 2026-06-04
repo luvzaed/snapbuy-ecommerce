@@ -1,7 +1,8 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,8 +14,6 @@ import {
   CreditCard,
   ClipboardCheck,
   Loader2,
-  ShieldCheck,
-  Truck,
   Lock,
   CheckCircle2,
   Package,
@@ -114,9 +113,14 @@ function InputField({
 }
 
 export default function CheckoutPage() {
-  const { user, cart, placeOrder, isCheckingOut } = useAuth();
+  const { user, loading, cart, placeOrder, isCheckingOut, updateQuantity } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  // True when the user opened a step via "Düzenle" from Step 3 (Review).
+  // When set, clicking "Devam Et" on the edited step jumps directly back to
+  // Review instead of walking through the remaining steps one at a time.
+  // Also persisted into history.state so the browser back button stays in sync.
+  const [returnToReview, setReturnToReview] = useState(false);
 
   // Shipping form
   const [shipping, setShipping] = useState({
@@ -140,14 +144,75 @@ export default function CheckoutPage() {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect if not logged in or cart is empty
+  // Placing the order clears the cart; this flag prevents the empty-cart
+  // redirect below from bouncing the user to /cart instead of the confirmation.
+  const orderPlacedRef = useRef(false);
+
+  // Guards the live-stock validation below so it runs only once per visit.
+  const stockValidatedRef = useRef(false);
+
+  // Re-validate cart stock against the DB on load, in case the cart was stale
+  // by the time the user reached checkout (mirrors the check on /cart).
   useEffect(() => {
+    if (loading || !user || cart.length === 0) return;
+    if (stockValidatedRef.current) return;
+    stockValidatedRef.current = true;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch('/api/products');
+        if (!res.ok || cancelled) return;
+        const products: Product[] = await res.json();
+        if (cancelled) return;
+
+        const map: Record<number, number> = {};
+        products.forEach((p) => {
+          map[p.id] = p.stock;
+        });
+
+        // Any out-of-stock item: bounce back to the cart to resolve it there.
+        const outOfStock = cart.some(
+          (item) => (map[item.product.id] ?? 0) === 0,
+        );
+        if (outOfStock) {
+          toast.error(
+            'Sepetinizde stokta olmayan bir ürün var. Lütfen sepetinizi güncelleyin.',
+          );
+          router.push('/cart');
+          return;
+        }
+
+        // Cap any quantity that now exceeds available stock.
+        cart.forEach((item) => {
+          const stock = map[item.product.id];
+          if (stock !== undefined && stock > 0 && item.quantity > stock) {
+            updateQuantity(item.product.id, stock);
+            toast(
+              `"${item.product.name}" için stok ${stock} adede düştü. Sepetiniz güncellendi.`,
+              { icon: '⚠️' },
+            );
+          }
+        });
+      } catch (err) {
+        console.error('Failed to validate checkout stock:', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user, cart, router, updateQuantity]);
+
+  // Redirect if not logged in or cart is empty (wait for auth to hydrate first)
+  useEffect(() => {
+    if (loading) return;
     if (!user) {
       router.push('/login');
-    } else if (cart.length === 0) {
+    } else if (cart.length === 0 && !orderPlacedRef.current) {
       router.push('/cart');
     }
-  }, [user, cart, router]);
+  }, [loading, user, cart, router]);
 
   // Pre-fill name from user (must be above the early return to preserve hook order)
   useEffect(() => {
@@ -165,6 +230,9 @@ export default function CheckoutPage() {
       const step = e.state?.checkoutStep;
       if (step && step >= 1 && step <= 3) {
         setErrors({});
+        // Restore the edit-from-review flag from history so navigation stays
+        // consistent when the user uses the browser back/forward buttons.
+        setReturnToReview(!!e.state?.returnToReview);
         setCurrentStep(step);
       }
     };
@@ -182,7 +250,7 @@ export default function CheckoutPage() {
   if (!user || cart.length === 0) return null;
 
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const tax = subtotal * 0.08;
+  const tax = subtotal * 0.20;
   const total = subtotal + tax;
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -213,7 +281,10 @@ export default function CheckoutPage() {
   const handleNext = () => {
     if (currentStep === 1 && !validateShipping()) return;
     if (currentStep === 2 && !validatePayment()) return;
-    const nextStep = Math.min(currentStep + 1, 3);
+    // If the user came from Review to edit this step, send them straight back
+    // to Review (step 3). Otherwise advance one step as usual.
+    const nextStep = returnToReview ? 3 : Math.min(currentStep + 1, 3);
+    setReturnToReview(false);
     window.history.pushState({ checkoutStep: nextStep }, '');
     setCurrentStep(nextStep);
   };
@@ -224,11 +295,17 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    const success = await placeOrder();
+    // Mark that we're placing an order so the empty-cart redirect doesn't fire
+    // when placeOrder() clears the cart on success.
+    orderPlacedRef.current = true;
+    // Place the order here at the final review step, sending the collected
+    // shipping + contact info (card data is intentionally not persisted).
+    const success = await placeOrder(shipping, undefined, total);
     if (success) {
       toast.success('Siparişiniz başarıyla oluşturuldu!');
       router.push('/order-confirmation');
     } else {
+      orderPlacedRef.current = false;
       toast.error('Sipariş oluşturulamadı. Lütfen tekrar deneyin.');
     }
   };
@@ -331,11 +408,12 @@ export default function CheckoutPage() {
                     name="phone"
                     value={shipping.phone}
                     onChange={(e) =>
-                      setShipping({ ...shipping, phone: e.target.value })
+                      setShipping({ ...shipping, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })
                     }
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="05551234567"
                     icon={Phone}
                     type="tel"
+                    maxLength={11}
                     error={errors.phone}
                   />
                 </div>
@@ -380,24 +458,13 @@ export default function CheckoutPage() {
                     name="zip"
                     value={shipping.zip}
                     onChange={(e) =>
-                      setShipping({ ...shipping, zip: e.target.value })
+                      setShipping({ ...shipping, zip: e.target.value.replace(/\D/g, '').slice(0, 5) })
                     }
                     placeholder="10001"
                     icon={Hash}
+                    maxLength={5}
                     error={errors.zip}
                   />
-                </div>
-              </div>
-
-              {/* Trust badges */}
-              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                  <Truck className="w-4 h-4 text-indigo-500" />
-                  <span className="text-xs font-medium">Ücretsiz Kargo</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                  <ShieldCheck className="w-4 h-4 text-indigo-500" />
-                  <span className="text-xs font-medium">Güvenli Ödeme</span>
                 </div>
               </div>
             </div>
@@ -477,18 +544,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Security notice */}
-              <div className="mt-8 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3">
-                <Lock className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-emerald-800 dark:text-emerald-300 text-sm font-semibold">
-                    Güvenli ve Şifreli
-                  </p>
-                  <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-0.5">
-                    Bu bir demo ödemesidir. Gerçek ödeme işlemi yapılmaz.
-                  </p>
-                </div>
-              </div>
             </div>
           )}
 
@@ -511,7 +566,15 @@ export default function CheckoutPage() {
                     Teslimat Adresi
                   </h3>
                   <button
-                    onClick={() => setCurrentStep(1)}
+                    onClick={() => {
+                      setErrors({});
+                      setReturnToReview(true);
+                      window.history.pushState(
+                        { checkoutStep: 1, returnToReview: true },
+                        '',
+                      );
+                      setCurrentStep(1);
+                    }}
                     className="text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
                   >
                     Düzenle
@@ -536,7 +599,15 @@ export default function CheckoutPage() {
                     Ödeme Yöntemi
                   </h3>
                   <button
-                    onClick={() => setCurrentStep(2)}
+                    onClick={() => {
+                      setErrors({});
+                      setReturnToReview(true);
+                      window.history.pushState(
+                        { checkoutStep: 2, returnToReview: true },
+                        '',
+                      );
+                      setCurrentStep(2);
+                    }}
                     className="text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
                   >
                     Düzenle
@@ -594,17 +665,13 @@ export default function CheckoutPage() {
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between mt-8">
-            {currentStep > 1 ? (
-              <button
-                onClick={handleBack}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Geri
-              </button>
-            ) : (
-              <div />
-            )}
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Geri
+            </button>
 
             {currentStep < 3 ? (
               <button
@@ -681,7 +748,7 @@ export default function CheckoutPage() {
                 <span className="text-emerald-600 font-medium">Ücretsiz</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-300 text-sm">
-                <span>KDV (%8)</span>
+                <span>KDV (%20)</span>
                 <span className="font-medium">₺{tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between text-slate-900 dark:text-white font-bold text-lg">

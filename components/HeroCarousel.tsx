@@ -1,289 +1,217 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, ArrowRight, Star, ShoppingBag } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { Product } from '@/lib/types';
 
-// ── Featured slides pulled from real product data ─────────────────────────────
-const slides = [
-  {
-    id: 1,
-    tag: 'Elektronik',
-    title: 'Wireless Noise-Cancelling Headphones',
-    subtitle: 'Premium over-ear headphones with active noise cancellation and 30-hour battery life.',
-    price: '₺199.99',
-    originalPrice: '₺279.99',
-    rating: 4.8,
-    reviews: 2341,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1600&h=900&fit=crop',
-    href: '/product/3',
-    accentFrom: '#06b6d4',
-    accentTo: '#3b82f6',
-  },
-  {
-    id: 2,
-    tag: 'Elektronik',
-    title: 'Smartphone Pro Max',
-    subtitle: 'Latest flagship smartphone with a 6.7-inch OLED display and a triple-camera system.',
-    price: '₺999.99',
-    originalPrice: '₺1,199.99',
-    rating: 4.9,
-    reviews: 5872,
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1600&h=900&fit=crop',
-    href: '/product/12',
-    accentFrom: '#8b5cf6',
-    accentTo: '#6366f1',
-  },
-  {
-    id: 3,
-    tag: 'Elektronik',
-    title: 'Ultra-Slim Laptop 15 inch',
-    subtitle: 'Powerful 15-inch laptop with M2 chip and Retina display crafted for professionals.',
-    price: '₺1,299.99',
-    originalPrice: '₺1,599.99',
-    rating: 4.7,
-    reviews: 1988,
-    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1600&h=900&fit=crop',
-    href: '/product/4',
-    accentFrom: '#3b82f6',
-    accentTo: '#06b6d4',
-  },
-  {
-    id: 4,
-    tag: 'Elektronik',
-    title: 'Professional DSLR Camera',
-    subtitle: 'Full-frame DSLR camera with 24.2MP sensor and 4K video recording for creators.',
-    price: '₺899.99',
-    originalPrice: '₺1,149.99',
-    rating: 4.8,
-    reviews: 3210,
-    image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1600&h=900&fit=crop',
-    href: '/product/7',
-    accentFrom: '#f59e0b',
-    accentTo: '#ef4444',
-  },
-  {
-    id: 5,
-    tag: 'Aksesuar',
-    title: 'Classic Analog Wristwatch',
-    subtitle: 'Elegant stainless steel watch with leather strap and Swiss movement for timeless style.',
-    price: '₺249.99',
-    originalPrice: '₺349.99',
-    rating: 4.9,
-    reviews: 4120,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1600&h=900&fit=crop',
-    href: '/product/5',
-    accentFrom: '#10b981',
-    accentTo: '#14b8a6',
-  },
+// ── Slide definitions — product IDs, badge label and subtitle (UNCHANGED) ─────
+interface SlideDef {
+  productId: number;
+  badge: string;
+  subtitle: string;
+}
+
+const SLIDE_DEFS: SlideDef[] = [
+  { productId: 48, badge: 'ELEKTRONİK', subtitle: 'En İyi Akıllı Telefon Deneyimi' },
+  { productId: 55, badge: 'ELEKTRONİK', subtitle: 'Oyunda Sınırları Zorla' },
+  { productId: 63, badge: 'AKSESUAR', subtitle: 'Tarzını Yansıt' },
+  { productId: 58, badge: 'SPOR', subtitle: 'Hedeflerine Ulaş' },
+  { productId: 66, badge: 'GİYİM', subtitle: 'Her Anda Rahat Hisset' },
 ];
 
-const INTERVAL = 5500;
+interface Slide extends SlideDef {
+  product: Product;
+}
+
+// Map a category to a background key used for the .hero-bg-* classes below.
+function bgKey(category: string): string {
+  const c = category.toLowerCase();
+  if (c.includes('elektronik') || c.includes('electronic') || c.includes('tech')) return 'elektronik';
+  if (c.includes('spor') || c.includes('sport') || c.includes('fitness')) return 'spor';
+  if (c.includes('aksesuar') || c.includes('accessor')) return 'aksesuar';
+  if (c.includes('giyim') || c.includes('fashion') || c.includes('clothing') || c.includes('apparel')) return 'giyim';
+  return 'default';
+}
+
+const INTERVAL = 5000;
 
 interface HeroCarouselProps {
+  // Passed in from page.tsx — already fetched, no duplicate request needed.
   products?: Product[];
 }
 
 export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
   const [current, setCurrent] = useState(0);
-  const [animating, setAnimating] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const getSlideHref = (s: typeof slides[number]) => {
-    const matchingProduct = products.find(
-      (p) => p.name.toLowerCase() === s.title.toLowerCase(),
-    );
-    return matchingProduct ? `/product/${matchingProduct.id}` : s.href;
-  };
-
-  const goTo = useCallback(
-    (index: number) => {
-      if (animating || index === current) return;
-      setAnimating(true);
-      setCurrent(index);
-      setTimeout(() => setAnimating(false), 600);
-    },
-    [animating, current],
-  );
+  // Build slides at render time; missing product IDs are silently skipped.
+  const slides: Slide[] = SLIDE_DEFS.reduce<Slide[]>((acc, def) => {
+    const product = products.find((p) => p.id === def.productId);
+    if (product) acc.push({ ...def, product });
+    return acc;
+  }, []);
 
   const next = useCallback(() => {
-    goTo((current + 1) % slides.length);
-  }, [current, goTo]);
+    setCurrent((c) => (c + 1) % slides.length);
+  }, [slides.length]);
 
-  const prev_ = useCallback(() => {
-    goTo((current - 1 + slides.length) % slides.length);
-  }, [current, goTo]);
+  const prev = useCallback(() => {
+    setCurrent((c) => (c - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
-  // Auto-advance
+  // Auto-advance — paused on hover, disabled when only 1 slide
   useEffect(() => {
-    if (paused) return;
-    autoRef.current = setInterval(next, INTERVAL);
+    if (paused || slides.length <= 1) return;
+    timerRef.current = setInterval(next, INTERVAL);
     return () => {
-      if (autoRef.current) clearInterval(autoRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [next, paused]);
+  }, [next, paused, slides.length]);
 
-  // Touch support
-  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.touches[0].clientX);
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart === null) return;
-    const diff = touchStart - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) next();
-      else prev_();
-    }
-    setTouchStart(null);
-  };
-
-  const slide = slides[current];
-  const discount = slide.originalPrice
-    ? Math.round(
-        (1 -
-          parseFloat(slide.price.replace(/[₺,]/g, '')) /
-            parseFloat(slide.originalPrice.replace(/[₺,]/g, ''))) *
-          100,
-      )
-    : 0;
+  // 0 slides — hide carousel entirely
+  if (slides.length === 0) return null;
 
   return (
-    <div
-      className="relative w-full overflow-hidden bg-slate-950"
-      style={{ minHeight: '520px', height: 'clamp(520px, 78vh, 760px)' }}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* ── Full-bleed slide backgrounds (crossfade + slow zoom) ── */}
-      {slides.map((s, i) => (
+    <>
+      {/*
+        Per-category backgrounds. Light mode = soft pastel tint.
+        Dark mode (.dark) = the original dark gradients, so the carousel still
+        looks at home against the site's existing dark navy theme.
+      */}
+      <style>{`
+        .hero-bg-elektronik { background: #f0f9ff; }
+        .hero-bg-aksesuar   { background: #fffbeb; }
+        .hero-bg-spor       { background: #f0fdf4; }
+        .hero-bg-giyim      { background: #faf5ff; }
+        .hero-bg-default    { background: #f8fafc; }
+        .dark .hero-bg-elektronik { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); }
+        .dark .hero-bg-aksesuar   { background: linear-gradient(135deg, #1a1a2e, #3b2f10, #1a1a2e); }
+        .dark .hero-bg-spor       { background: linear-gradient(135deg, #0b132b, #134e5e, #0b132b); }
+        .dark .hero-bg-giyim      { background: linear-gradient(135deg, #2c3e50, #1f3a5f, #16213e); }
+        .dark .hero-bg-default    { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+      `}</style>
+
+      <div
+        className="relative overflow-hidden rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.04)] dark:shadow-2xl border border-[#e2e8f0] dark:border-white/10 h-[350px] md:h-[500px]"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
+        {/* ── Slide track — translateX drives the slide-in animation ── */}
         <div
-          key={s.id}
-          className={`absolute inset-0 transition-opacity duration-700 ease-out ${
-            i === current ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-          aria-hidden={i !== current}
+          className="flex h-full transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${current * 100}%)` }}
         >
-          <Image
-            src={s.image}
-            alt={s.title}
-            fill
-            priority={i === 0}
-            sizes="100vw"
-            className={`object-cover ease-out ${i === current ? 'scale-105' : 'scale-100'}`}
-            style={{ transition: 'transform 6000ms ease-out' }}
-          />
-          {/* Readability scrims */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-slate-950/20" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/20" />
-        </div>
-      ))}
-
-      {/* ── Content overlay ── */}
-      <div className="relative z-10 h-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 flex items-center">
-        <div key={current} className="max-w-xl animate-fade-in-up">
-          {/* Category badge */}
-          <span
-            className="inline-flex items-center px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white shadow-lg mb-5"
-            style={{ background: `linear-gradient(135deg, ${slide.accentFrom}, ${slide.accentTo})` }}
-          >
-            {slide.tag}
-          </span>
-
-          {/* Title */}
-          <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.05] text-white mb-5 tracking-tight drop-shadow-xl">
-            {slide.title}
-          </h1>
-
-          {/* Subtitle */}
-          <p className="text-slate-200 text-base sm:text-lg leading-relaxed mb-7 max-w-lg drop-shadow-md">
-            {slide.subtitle}
-          </p>
-
-          {/* Rating */}
-          <div className="flex items-center gap-2 mb-7">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className="w-4 h-4"
-                  fill={i < Math.floor(slide.rating) ? '#fbbf24' : 'transparent'}
-                  style={{ color: '#fbbf24' }}
-                />
-              ))}
-            </div>
-            <span className="text-sm font-bold text-white">{slide.rating}</span>
-            <span className="text-sm text-slate-300">
-              ({slide.reviews.toLocaleString()} yorum)
-            </span>
-          </div>
-
-          {/* Price + CTA */}
-          <div className="flex flex-wrap items-center gap-5">
-            <div className="flex items-baseline gap-2.5">
-              <span className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-md">
-                {slide.price}
-              </span>
-              {slide.originalPrice && (
-                <>
-                  <span className="text-base text-slate-400 line-through">
-                    {slide.originalPrice}
-                  </span>
-                  <span
-                    className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
-                    style={{ background: `linear-gradient(135deg, ${slide.accentFrom}, ${slide.accentTo})` }}
-                  >
-                    -{discount}%
-                  </span>
-                </>
-              )}
-            </div>
-
-            <Link
-              href={getSlideHref(slide)}
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl text-white font-semibold text-sm shadow-xl transition-all duration-300 hover:scale-105 hover:brightness-110"
-              style={{ background: `linear-gradient(135deg, ${slide.accentFrom}, ${slide.accentTo})` }}
+          {slides.map((s, idx) => (
+            <div
+              key={s.productId}
+              className={`hero-bg-${bgKey(s.product.category)} w-full h-full flex-shrink-0 flex flex-col md:flex-row items-center`}
             >
-              <ShoppingBag className="w-4 h-4" />
-              Hemen Al
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+              {/* ── Left: text content ── */}
+              <div className="md:w-[45%] w-full flex flex-col justify-center px-8 md:px-12 lg:px-16 py-6 md:py-12 gap-3 md:gap-5 order-2 md:order-1 flex-shrink-0">
+
+                {/* Category chip */}
+                <span className="self-start px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 border border-cyan-100 dark:border-cyan-800">
+                  {s.badge}
+                </span>
+
+                {/* Product name */}
+                <h2 className="text-[28px] md:text-5xl font-bold leading-tight text-slate-900 dark:text-white max-w-md">
+                  {s.product.name}
+                </h2>
+
+                {/* Subtitle */}
+                <p className="text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-xs leading-snug">
+                  {s.subtitle}
+                </p>
+
+                {/* Price — JetBrains Mono numerals, site cyan→blue gradient */}
+                <p className="font-mono-price text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
+                  ₺{s.product.price.toLocaleString('tr-TR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+
+                {/* CTA button — site brand gradient */}
+                <Link
+                  href={`/product/${s.productId}`}
+                  className="self-start inline-flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-sm text-white gradient-brand transition-all duration-200 hover:brightness-110 hover:scale-105 active:scale-95 shadow-md"
+                >
+                  Ürünü İncele
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              {/* ── Right: product image floats on the pastel background ── */}
+              {/* Radial mask fades the photo's white edges into the slide
+                  background so there's no harsh white rectangle. */}
+              <div
+                className="md:w-[55%] w-full relative md:h-full h-[150px] order-1 md:order-2 flex-shrink-0 overflow-hidden"
+                style={{
+                  WebkitMaskImage:
+                    'radial-gradient(ellipse 88% 88% at 55% 50%, black 45%, transparent 82%)',
+                  maskImage:
+                    'radial-gradient(ellipse 88% 88% at 55% 50%, black 45%, transparent 82%)',
+                }}
+              >
+                <Image
+                  src={s.product.image}
+                  alt={s.product.name}
+                  fill
+                  className="object-contain"
+                  style={{
+                    padding: '1.5rem',
+                    filter: 'drop-shadow(0 18px 40px rgba(15,23,42,0.22))',
+                  }}
+                  sizes="(max-width: 768px) 100vw, 55vw"
+                  priority={idx === 0}
+                />
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
 
-      {/* ── Navigation arrows ── */}
-      <button
-        onClick={prev_}
-        className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all"
-        aria-label="Önceki"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-      <button
-        onClick={next}
-        className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all"
-        aria-label="Sonraki"
-      >
-        <ChevronRight className="w-5 h-5" />
-      </button>
+        {/* ── Navigation arrows — minimal white circles, hidden when 1 slide ── */}
+        {slides.length > 1 && (
+          <>
+            <button
+              onClick={prev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-[#131b2e] dark:text-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md"
+              aria-label="Önceki slayt"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={next}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-[#131b2e] dark:text-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md"
+              aria-label="Sonraki slayt"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
 
-      {/* ── Dot indicators ── */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5">
-        {slides.map((s, i) => (
-          <button
-            key={s.id}
-            onClick={() => goTo(i)}
-            aria-label={`${i + 1}. slayt`}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              i === current ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
-            }`}
-          />
-        ))}
+        {/* ── Dots — gray circles, active = wider teal pill ── */}
+        {slides.length > 1 && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            {slides.map((s, i) => (
+              <button
+                key={s.productId}
+                onClick={() => setCurrent(i)}
+                aria-label={`${i + 1}. slayt`}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === current
+                    ? 'w-7 bg-[#006a6a] dark:bg-cyan-400'
+                    : 'w-2 bg-slate-300 dark:bg-white/30 hover:bg-slate-400'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

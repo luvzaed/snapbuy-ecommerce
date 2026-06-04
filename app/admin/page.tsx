@@ -22,6 +22,14 @@ interface OverviewOrder {
   user?: { name: string | null; email: string };
 }
 
+interface TopProduct {
+  productId: number;
+  name: string;
+  image: string;
+  totalQuantity: number;
+  totalRevenue: number;
+}
+
 const STATUS: Record<string, { label: string; cls: string }> = {
   PENDING: { label: 'Beklemede', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
   PROCESSING: { label: 'Hazırlanıyor', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -43,31 +51,34 @@ const money = (n: number) =>
   `₺${Number(n).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function AdminOverviewPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, users: 0 });
   const [recent, setRecent] = useState<OverviewOrder[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!authLoading && (!user || user.role !== 'admin')) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     if (user?.role !== 'admin') return;
     const load = async () => {
       setLoading(true);
       try {
-        const [pRes, oRes, uRes] = await Promise.all([
+        const [pRes, oRes, uRes, tpRes] = await Promise.all([
           fetch('/api/products'),
           fetch('/api/orders?all=true'),
           fetch('/api/users'),
+          fetch('/api/admin/top-products'),
         ]);
         const products = pRes.ok ? await pRes.json() : [];
         const orders = oRes.ok ? await oRes.json() : [];
         const users = uRes.ok ? await uRes.json() : [];
+        const tp = tpRes.ok ? await tpRes.json() : [];
         const productsArr = Array.isArray(products) ? products : [];
         const ordersArr: OverviewOrder[] = Array.isArray(orders) ? orders : [];
         const usersArr = Array.isArray(users) ? users : [];
@@ -82,6 +93,7 @@ export default function AdminOverviewPage() {
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
         setRecent(sorted.slice(0, 6));
+        setTopProducts(Array.isArray(tp) ? tp : []);
       } catch (e) {
         console.error('Overview load failed:', e);
       } finally {
@@ -222,6 +234,67 @@ export default function AdminOverviewPage() {
             })}
           </div>
         </div>
+      </div>
+
+      {/* ── En Çok Satan Ürünler ─────────────────────────────────── */}
+      <div className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-5">
+          <TrendingUp className="w-5 h-5 text-indigo-500" />
+          En Çok Satan Ürünler
+        </h2>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-14 rounded-xl skeleton" />
+            ))}
+          </div>
+        ) : topProducts.length === 0 ? (
+          <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">
+            Henüz satış verisi yok.
+          </p>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            {topProducts.map((p, i) => (
+              <div
+                key={p.productId}
+                className="flex items-center gap-4 py-3 -mx-2 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                {/* Rank */}
+                <span className="w-6 text-center text-xs font-bold text-slate-400 dark:text-slate-500 flex-shrink-0">
+                  {i + 1}
+                </span>
+
+                {/* Product image */}
+                {p.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-slate-100 dark:border-slate-700"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0" />
+                )}
+
+                {/* Name + units */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                    {p.name}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {p.totalQuantity.toLocaleString('tr-TR')} adet satıldı
+                  </p>
+                </div>
+
+                {/* Revenue */}
+                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                  {money(p.totalRevenue)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

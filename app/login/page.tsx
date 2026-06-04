@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FormInput from '@/components/FormInput';
 import Link from 'next/link';
@@ -8,9 +8,30 @@ import { LogIn } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import toast from 'react-hot-toast';
 
+// Resolve the post-login destination from the ?redirect= query param.
+// Only same-origin relative paths are allowed (prevents open-redirect attacks).
+function getSafeRedirect(): string {
+  if (typeof window === 'undefined') return '/';
+  const target = new URLSearchParams(window.location.search).get('redirect');
+  if (
+    target &&
+    target.startsWith('/') &&
+    !target.startsWith('//') &&
+    !target.startsWith('/\\')
+  ) {
+    return target;
+  }
+  return '/';
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuthUser } = useAuth();
+  const { setAuthUser, user, loading: authLoading } = useAuth();
+
+  // Already logged in? Don't show the login form — send them to the homepage.
+  useEffect(() => {
+    if (!authLoading && user) router.push(getSafeRedirect());
+  }, [authLoading, user, router]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,10 +56,10 @@ export default function LoginPage() {
         const data = await response.json();
         setAuthUser(data.user);
         toast.success('Başarıyla giriş yapıldı!');
-        router.push('/');
+        router.push(getSafeRedirect());
       } else {
         const data = await response.json();
-        setError(data.message || 'Geçersiz e-posta veya şifre');
+        setError(data.error || data.message || 'Geçersiz e-posta veya şifre');
       }
     } catch {
       setError('Ağ hatası, lütfen tekrar deneyin.');
@@ -46,6 +67,9 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Avoid flashing the form while auth resolves or for already-logged-in users.
+  if (authLoading || user) return null;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16 relative overflow-hidden bg-slate-50 dark:bg-slate-950">

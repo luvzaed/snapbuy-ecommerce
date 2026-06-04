@@ -20,6 +20,7 @@ import { useState, useEffect, useRef } from 'react';
 import VisualSearch from '@/components/VisualSearch';
 import ThemeToggle from '@/components/ThemeToggle';
 import toast from 'react-hot-toast';
+import { Product } from '@/lib/types';
 
 export default function Header() {
   const { user, logout, cartCount } = useAuth();
@@ -31,7 +32,49 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [vsOpen, setVsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Autocomplete state
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch the full product list once on mount for client-side filtering
+  useEffect(() => {
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setAllProducts(data);
+      })
+      .catch((err) => console.error('Failed to preload products for search:', err));
+  }, []);
+
+  // Debounced autocomplete filtering
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!searchQuery.trim()) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(() => {
+      const q = searchQuery.trim().toLowerCase();
+      const matches = allProducts
+        .filter((p) => p.name.toLowerCase().includes(q))
+        .slice(0, 6);
+      setSuggestions(matches);
+      setShowDropdown(true);
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, allProducts]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -43,6 +86,13 @@ export default function Header() {
         !userMenuRef.current.contains(event.target as Node)
       ) {
         setUserMenuOpen(false);
+      }
+      // Close autocomplete when clicking outside the search container
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -68,7 +118,17 @@ export default function Header() {
       router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
       setMenuOpen(false);
+      setShowDropdown(false);
+      setSuggestions([]);
     }
+  };
+
+  // Navigate to a product from the autocomplete dropdown
+  const handleSuggestionClick = (productId: number) => {
+    router.push(`/product/${productId}`);
+    setSearchQuery('');
+    setShowDropdown(false);
+    setSuggestions([]);
   };
 
   const handleHomeClick = (e: React.MouseEvent) => {
@@ -108,8 +168,11 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-2xl mx-auto">
+          {/* Desktop Search + Autocomplete */}
+          <div
+            className="hidden md:flex flex-1 max-w-2xl mx-auto relative"
+            ref={searchContainerRef}
+          >
             <form
               onSubmit={handleSearchSubmit}
               className="relative w-full group"
@@ -121,6 +184,12 @@ export default function Header() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setShowDropdown(false);
+                    setSuggestions([]);
+                  }
+                }}
                 placeholder="Ürün ara..."
                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full py-2.5 pl-11 pr-12 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-cyan-500/50 focus:bg-white dark:focus:bg-slate-800 focus:ring-1 focus:ring-cyan-500/50 transition-all shadow-inner"
               />
@@ -133,6 +202,49 @@ export default function Header() {
                 <ScanSearch className="h-4 w-4" />
               </button>
             </form>
+
+            {/* Autocomplete dropdown */}
+            {showDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden z-50">
+                {suggestions.length === 0 ? (
+                  <p className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                    Sonuç bulunamadı
+                  </p>
+                ) : (
+                  <ul className="py-1.5">
+                    {suggestions.map((product) => (
+                      <li key={product.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleSuggestionClick(product.id)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
+                        >
+                          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              {product.category}
+                            </p>
+                          </div>
+                          <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400 flex-shrink-0">
+                            ₺{product.price.toFixed(2)}
+                          </p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Desktop Nav */}
@@ -212,7 +324,7 @@ export default function Header() {
                           className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-medium"
                         >
                           <LayoutDashboard className="w-4 h-4 text-cyan-500" />
-                          Panelim
+                          Siparişlerim
                         </Link>
 
                         {user.role === 'admin' && (
@@ -274,7 +386,7 @@ export default function Header() {
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute 1 top-0 right-0 w-4 h-4 gradient-brand rounded-full text-[10px] flex items-center justify-center text-white font-bold">
+                <span className="absolute -top-1 -right-1 w-4 h-4 gradient-brand rounded-full text-[10px] flex items-center justify-center text-white font-bold">
                   {cartCount}
                 </span>
               )}
@@ -359,7 +471,7 @@ export default function Header() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base text-slate-700 hover:text-cyan-600 hover:bg-slate-50 font-medium"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <LayoutDashboard className="w-5 h-5 text-cyan-500" /> Panelim
+                    <LayoutDashboard className="w-5 h-5 text-cyan-500" /> Siparişlerim
                   </Link>
 
                   {user.role === 'admin' && (

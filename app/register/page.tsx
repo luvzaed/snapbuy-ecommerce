@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FormInput from '@/components/FormInput';
 import Link from 'next/link';
 import { UserPlus } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, loading: authLoading, setAuthUser } = useAuth();
+
+  // Already logged in? Don't show the register form — send them to the homepage.
+  useEffect(() => {
+    if (!authLoading && user) router.push('/');
+  }, [authLoading, user, router]);
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -41,7 +50,8 @@ export default function RegisterPage() {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = 'Ad gerekli';
-    if (!form.email.includes('@')) errs.email = 'Geçerli e-posta gerekli';
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!EMAIL_RE.test(form.email)) errs.email = 'Geçersiz e-posta adresi';
 
     if (form.password.length < 8) {
       errs.password = 'Şifre en az 8 karakter olmalı';
@@ -78,10 +88,34 @@ export default function RegisterPage() {
       });
 
       if (response.ok) {
-        router.push('/login');
+        // Auto-login: hit the login endpoint with the same credentials so the
+        // auth_session cookie gets set (the registration endpoint doesn't set
+        // a cookie, and the edge middleware needs that cookie).
+        const loginRes = await fetch('/api/users/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password,
+          }),
+        });
+
+        if (loginRes.ok) {
+          const loginData = await loginRes.json();
+          setAuthUser(loginData.user);
+          toast.success('Hesabınız başarıyla oluşturuldu!');
+          router.push('/');
+        } else {
+          // Registration worked but auto-login failed for some reason —
+          // fall back to sending the user to the login page.
+          toast.success('Hesabınız oluşturuldu. Lütfen giriş yapın.');
+          router.push('/login');
+        }
       } else {
         const data = await response.json();
-        setErrors({ email: data.message || 'Bir şeyler ters gitti' });
+        setErrors({
+          email: data.error || data.message || 'Bir şeyler ters gitti',
+        });
       }
     } catch {
       setErrors({ email: 'Ağ hatası, lütfen tekrar deneyin.' });
@@ -92,6 +126,9 @@ export default function RegisterPage() {
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  // Avoid flashing the form while auth resolves or for already-logged-in users.
+  if (authLoading || user) return null;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16 relative bg-slate-50 dark:bg-slate-950 overflow-hidden">

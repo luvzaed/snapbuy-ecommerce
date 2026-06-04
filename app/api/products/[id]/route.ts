@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
+import { getSession, isAdmin } from "@/lib/api-auth";
+import { triggerVisualSearchReindex } from "@/lib/reindex";
 
 interface Params {
   params: Promise<{ id: string }>;
+}
+
+/**
+ * Delete a locally-uploaded product image from disk (best-effort).
+ * Skips external URLs silently. Logs but never throws on FS errors so the
+ * caller can always proceed with the database operation regardless.
+ */
+async function deleteLocalImage(imagePath: string): Promise<void> {
+  if (!imagePath || !imagePath.startsWith("/images/products/")) return;
+  const fullPath = path.join(process.cwd(), "public", imagePath);
+  try {
+    await unlink(fullPath);
+  } catch (err) {
+    console.warn(`Could not delete image file "${fullPath}":`, err);
+  }
 }
 
 // Save an uploaded image File to /public/images/products and return its public path
@@ -32,10 +49,24 @@ export async function GET(_req: NextRequest, { params }: Params) {
   }
 }
 
-// PUT /api/products/[id] — update a product (accepts multipart file upload OR JSON)
+// PUT /api/products/[id] — update a product (admin only; accepts multipart file upload OR JSON)
 export async function PUT(req: NextRequest, { params }: Params) {
+  const session = getSession(req);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isAdmin(session)) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
   try {
     const { id } = await params;
+
+    // Read the existing product so we can clean up its image file if it changes.
+    const existing = await prisma.product.findUnique({
+      where: { id: Number(id) },
+      select: { image: true },
+    });
+
     const contentType = req.headers.get("content-type") || "";
     const data: Record<string, unknown> = {};
 
@@ -74,6 +105,18 @@ export async function PUT(req: NextRequest, { params }: Params) {
       data,
     });
 
+    // If the image was replaced with a different local file, delete the old one.
+    if (
+      existing?.image &&
+      typeof data.image === "string" &&
+      data.image !== existing.image
+    ) {
+      await deleteLocalImage(existing.image);
+    }
+
+    // Keep visual search in sync (re-embeds only if the image changed).
+    triggerVisualSearchReindex(`update product #${id}`);
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error(error);
@@ -81,13 +124,36 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 }
 
-// DELETE /api/products/[id] — delete a product
-export async function DELETE(_req: NextRequest, { params }: Params) {
+// DELETE /api/products/[id] — delete a product (admin only)
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const session = getSession(req);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isAdmin(session)) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
   try {
     const { id } = await params;
+
+    // Read the image path before the record is gone so we can clean up the file.
+    const existing = await prisma.product.findUnique({
+      where: { id: Number(id) },
+      select: { image: true },
+    });
+
     await prisma.product.delete({
       where: { id: Number(id) },
     });
+
+    // Best-effort: delete the local image file. Errors are logged, not thrown.
+    if (existing?.image) {
+      await deleteLocalImage(existing.image);
+    }
+
+    // Drop the deleted product from the visual search index (non-blocking).
+    triggerVisualSearchReindex(`delete product #${id}`);
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Not found or delete failed" }, { status: 404 });

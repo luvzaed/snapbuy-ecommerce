@@ -2,10 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Github, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Product } from "@/lib/types";
 
 export default function Footer() {
   const pathname = usePathname();
+
+  // Real categories pulled from the catalog so the Mağaza links always reflect
+  // what's actually in the store (and link to the matching shop filter).
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((data: Product[]) => {
+        if (!Array.isArray(data)) return;
+        const unique = Array.from(
+          new Set(data.map((p) => p.category).filter(Boolean)),
+        ) as string[];
+        setCategories(unique.slice(0, 6));
+      })
+      .catch((err) => console.error("Failed to load footer categories:", err));
+  }, []);
+
   // Admin area has its own dedicated layout — hide the storefront footer there
   if (pathname.startsWith('/admin')) return null;
 
@@ -44,14 +64,24 @@ export default function Footer() {
           <div>
             <h4 className="text-slate-900 dark:text-white font-semibold text-sm mb-5 uppercase tracking-wider">Mağaza</h4>
             <ul className="space-y-3">
-              {["Elektronik", "Giyilebilir", "Oyun", "Ses", "Fotoğraf", "Bilgisayar"].map((cat) => (
+              {/* All products */}
+              <li>
+                <Link
+                  href="/shop"
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200"
+                >
+                  Tüm Ürünler
+                </Link>
+              </li>
+              {/* Real categories — each links to its shop filter */}
+              {categories.map((cat) => (
                 <li key={cat}>
-                  <a
-                    href="#"
-                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200"
+                  <Link
+                    href={`/shop?category=${encodeURIComponent(cat)}`}
+                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200 capitalize"
                   >
                     {cat}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

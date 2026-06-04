@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession, isAdmin } from "@/lib/api-auth";
+import { hashPassword } from "@/lib/password";
 
-// GET /api/users — fetch all users
-export async function GET() {
+// GET /api/users — list all users (admin only)
+export async function GET(req: NextRequest) {
+  const session = getSession(req);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isAdmin(session)) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, email: true, role: true }, // never return passwords
+      // never return passwords; include fields the admin table needs
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        _count: { select: { orders: true } },
+      },
+      orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(users);
   } catch {
@@ -13,23 +31,30 @@ export async function GET() {
   }
 }
 
-// POST /api/users — create a new user
+// POST /api/users — public registration.
+// Always creates a normal USER and hashes the password; any role in the body is ignored.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, role } = body;
+    const { name, email, password } = body; // `role` intentionally ignored here
 
     if (!email || !password) {
       return NextResponse.json({ error: "email and password are required" }, { status: 400 });
     }
 
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!EMAIL_RE.test(email)) {
+      return NextResponse.json({ error: "Geçersiz e-posta adresi" }, { status: 400 });
+    }
+
     const user = await prisma.user.create({
       data: {
+        name: name ?? null,
         email,
-        password, // Note: hash passwords before storing in production
-        role: role || "USER",
+        password: await hashPassword(password),
+        role: "USER", // public registration can never create an admin
       },
-      select: { id: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true },
     });
 
     return NextResponse.json(user, { status: 201 });

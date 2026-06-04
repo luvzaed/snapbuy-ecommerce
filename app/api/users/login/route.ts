@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import { verifyPassword, hashPassword, isHashed } from '@/lib/password';
 
 export async function POST(req: Request) {
   try {
@@ -29,23 +29,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5. Verify password
-    // Supports both hashed passwords (bcrypt) for legacy accounts and plain-text passwords
-    let isPasswordValid = false;
-
-    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
-      // Password is hashed with bcrypt — compare securely
-      isPasswordValid = await bcrypt.compare(password, user.password);
-    } else {
-      // Plain-text password — compare directly without upgrading/rehashing
-      isPasswordValid = user.password === password;
-    }
+    // 5. Verify password (bcrypt, with a legacy plaintext fallback)
+    const isPasswordValid = await verifyPassword(password, user.password);
 
     if (!isPasswordValid) {
       return NextResponse.json(
         { message: 'Invalid email or password' },
         { status: 401 },
       );
+    }
+
+    // Lazy migration: once a legacy plaintext password is verified, upgrade it
+    // to a bcrypt hash so the account is hashed going forward.
+    if (!isHashed(user.password)) {
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { password: await hashPassword(password) },
+        });
+      } catch (e) {
+        console.error('Password hash upgrade failed (non-fatal):', e);
+      }
     }
 
     // 6. Return success response (Login successful)

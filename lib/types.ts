@@ -25,7 +25,7 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string;
+  id: number;
   userId: string | number;
   items: OrderItem[];
   total: number;

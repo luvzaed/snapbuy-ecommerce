@@ -61,6 +61,39 @@ export async function PATCH(
   }
 }
 
+// DELETE /api/orders/[id] — delete an order (admin only)
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const sessionCookie = req.cookies.get("auth_session")?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let session;
+  try {
+    session = JSON.parse(sessionCookie);
+    if (session.role !== "admin") {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+  }
+
+  try {
+    const { id } = await params;
+    const orderId = Number(id);
+    // OrderItem has no cascade delete in the schema — remove items first
+    await prisma.orderItem.deleteMany({ where: { orderId } });
+    await prisma.order.delete({ where: { id: orderId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    return NextResponse.json({ error: "Failed to delete order" }, { status: 500 });
+  }
+}
+
 // GET /api/orders/[id] — get single order details (owner or admin only)
 export async function GET(
   req: NextRequest,

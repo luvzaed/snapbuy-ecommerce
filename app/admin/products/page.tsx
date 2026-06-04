@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react'; // CHANGED: added useRef for file input
-import { Edit2, Trash2, Loader2, Plus, Package, Upload, X } from 'lucide-react';
+import { Edit2, Trash2, Loader2, Plus, Package, Upload, X, Search } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Product } from '@/lib/types';
 
 export default function AdminProductsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -32,6 +32,7 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [productSearch, setProductSearch] = useState('');
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -51,10 +52,10 @@ export default function AdminProductsPage() {
   }, []);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!authLoading && (!user || user.role !== 'admin')) {
       router.push('/login');
     }
-  }, [user, router]);
+  }, [authLoading, user, router]);
 
   if (!user || user.role !== 'admin') return null;
 
@@ -215,6 +216,10 @@ export default function AdminProductsPage() {
     );
   }
 
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(productSearch.toLowerCase()),
+  );
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -232,7 +237,7 @@ export default function AdminProductsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Left Column: Form */}
-        <div className="lg:col-span-1 p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm h-fit sticky top-24">
+        <div className="lg:col-span-1 p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
           <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white text-center border-b border-slate-100 dark:border-slate-800 pb-4">
             {editingId ? '✏️ Ürünü Düzenle' : '✨ Yeni Ürün Ekle'}
           </h2>
@@ -258,17 +263,17 @@ export default function AdminProductsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Fiyat (₺)</label>
-                <input type="number" name="price" value={formData.price} onChange={handleChange} required placeholder="199" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 placeholder-slate-400 transition-all" />
+                <input type="number" name="price" value={formData.price} onChange={handleChange} required placeholder="199" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Stok</label>
-                <input type="number" name="stock" value={formData.stock} onChange={handleChange} placeholder="50" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 placeholder-slate-400 transition-all" />
+                <input type="number" name="stock" value={formData.stock} onChange={handleChange} placeholder="50" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Kategori</label>
-              <input type="text" name="category" value={formData.category} onChange={handleChange} placeholder="e.g. Electronics" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 placeholder-slate-400 transition-all" />
+              <input type="text" name="category" value={formData.category} onChange={handleChange} placeholder="e.g. Electronics" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all" />
             </div>
 
             {/* CHANGED: Replaced text URL input with file upload area */}
@@ -335,7 +340,7 @@ export default function AdminProductsPage() {
 
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Açıklama</label>
-              <textarea name="description" value={formData.description} onChange={handleChange} rows={3} placeholder="Describe the product..." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 placeholder-slate-400 transition-all resize-none"></textarea>
+              <textarea name="description" value={formData.description} onChange={handleChange} rows={3} placeholder="Describe the product..." className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all resize-none"></textarea>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -344,7 +349,7 @@ export default function AdminProductsPage() {
               </button>
 
               {editingId && (
-                <button type="button" onClick={cancelEdit} className="px-4 py-3.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-700 font-medium transition-all">
+                <button type="button" onClick={cancelEdit} className="px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium transition-all">
                   İptal
                 </button>
               )}
@@ -354,27 +359,43 @@ export default function AdminProductsPage() {
 
         {/* Right Column: Products List */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between mb-6 px-2">
+          <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-500" />
               Mevcut Ürünler
             </h2>
             <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm font-semibold border border-indigo-200 dark:border-indigo-800">
-              Toplam: {products.length}
+              {productSearch
+                ? `${filteredProducts.length} / ${products.length}`
+                : `Toplam: ${products.length}`}
             </span>
+          </div>
+
+          {/* Search within products list */}
+          <div className="relative mb-6 px-2">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Ürün adına göre ara..."
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400 transition-all shadow-sm"
+            />
           </div>
 
           {isLoading ? (
             <div className="flex justify-center items-center h-64 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
               <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400">
-              Henüz ürün yok. İlk ürününüzü eklemek için formu kullanın!
+              {products.length === 0
+                ? 'Henüz ürün yok. İlk ürününüzü eklemek için formu kullanın!'
+                : `"${productSearch}" ile eşleşen ürün bulunamadı.`}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <div key={product.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all group">
 
                   <div className="flex items-start gap-4">

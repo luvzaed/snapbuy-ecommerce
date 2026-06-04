@@ -12,16 +12,62 @@ import {
   ShoppingBag,
   Truck,
   Clock,
-  Mail,
+  ClipboardCheck,
+  XCircle,
+  type LucideIcon,
 } from 'lucide-react';
 
+// Turkish translations + visual config for every order status the API can return.
+// Statuses are stored UPPERCASE in the DB; the lookup is case-insensitive below.
+const statusDisplay: Record<
+  string,
+  { label: string; icon: LucideIcon; bg: string; border: string; text: string }
+> = {
+  PENDING: {
+    label: 'Beklemede',
+    icon: Clock,
+    bg: 'bg-amber-50 dark:bg-amber-900/20',
+    border: 'border-amber-200 dark:border-amber-800',
+    text: 'text-amber-600 dark:text-amber-400',
+  },
+  PROCESSING: {
+    label: 'Hazırlanıyor',
+    icon: Package,
+    bg: 'bg-blue-50 dark:bg-blue-900/20',
+    border: 'border-blue-200 dark:border-blue-800',
+    text: 'text-blue-600 dark:text-blue-400',
+  },
+  SHIPPED: {
+    label: 'Kargoya Verildi',
+    icon: Truck,
+    bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+    border: 'border-indigo-200 dark:border-indigo-800',
+    text: 'text-indigo-600 dark:text-indigo-400',
+  },
+  DELIVERED: {
+    label: 'Teslim Edildi',
+    icon: CheckCircle2,
+    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    border: 'border-emerald-200 dark:border-emerald-800',
+    text: 'text-emerald-600 dark:text-emerald-400',
+  },
+  CANCELLED: {
+    label: 'İptal Edildi',
+    icon: XCircle,
+    bg: 'bg-rose-50 dark:bg-rose-900/20',
+    border: 'border-rose-200 dark:border-rose-800',
+    text: 'text-rose-600 dark:text-rose-400',
+  },
+};
+
 export default function OrderConfirmationPage() {
-  const { user, orders, fetchOrders } = useAuth();
+  const { user, loading: authLoading, orders, fetchOrders } = useAuth();
   const router = useRouter();
   const [latestOrder, setLatestOrder] = useState<AuthOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -33,7 +79,7 @@ export default function OrderConfirmationPage() {
       setLoading(false);
     };
     loadOrder();
-  }, [user, fetchOrders, router]);
+  }, [authLoading, user, fetchOrders, router]);
 
   // Update latest order when orders change
   useEffect(() => {
@@ -83,12 +129,20 @@ export default function OrderConfirmationPage() {
                 #{latestOrder.id}
               </p>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm font-semibold">
-                {latestOrder.status === 'PENDING' ? 'Beklemede' : latestOrder.status}
-              </span>
-            </div>
+            {(() => {
+              const s =
+                statusDisplay[latestOrder.status?.toUpperCase?.() ?? ''] ??
+                statusDisplay.PENDING;
+              const StatusIcon = s.icon;
+              return (
+                <div
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border ${s.bg} ${s.border} ${s.text}`}
+                >
+                  <StatusIcon className="w-4 h-4" />
+                  <span className="text-sm font-semibold">{s.label}</span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Order Items */}
@@ -155,11 +209,11 @@ export default function OrderConfirmationPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center mb-3">
-              <Mail className="w-5 h-5 text-indigo-500" />
+              <ClipboardCheck className="w-5 h-5 text-indigo-500" />
             </div>
             <p className="text-slate-900 dark:text-white text-sm font-semibold mb-1">Onay</p>
             <p className="text-slate-500 dark:text-slate-400 text-xs">
-              Sipariş onayı e-postanıza gönderildi
+              Siparişiniz başarıyla kaydedildi
             </p>
           </div>
           <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">

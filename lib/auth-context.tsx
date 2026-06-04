@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, Order, CartItem, Product } from './types';
 import toast from 'react-hot-toast';
 
@@ -10,11 +10,12 @@ export type AuthOrderItem = Order['items'][0];
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean;
   orders: Order[];
   cart: CartItem[];
   setAuthUser: (user: User) => void;
   logout: () => void;
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   cartCount: number;
@@ -30,6 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  // True until auth/cart state has been hydrated from localStorage. Protected
+  // pages must wait for this to be false before deciding to redirect.
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     try {
@@ -39,6 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedCart) setCart(JSON.parse(storedCart));
     } catch (error) {
       console.error('Error parsing data from localStorage:', error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -54,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('shop_cart');
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     const existing = cart.find((item) => item.product.id === product.id);
     const currentQty = existing ? existing.quantity : 0;
     // Enforce stock limit: never add more than what's in stock
@@ -66,15 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       return;
     }
+    // Cap the added quantity at the remaining available stock
+    const addQty = Math.min(quantity, product.stock - currentQty);
     setCart((prev) => {
       const ex = prev.find((item) => item.product.id === product.id);
       const updated = ex
         ? prev.map((item) =>
             item.product.id === product.id
-              ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
+              ? { ...item, quantity: item.quantity + addQty }
               : item,
           )
-        : [...prev, { product, quantity: 1 }];
+        : [...prev, { product, quantity: addQty }];
       localStorage.setItem('shop_cart', JSON.stringify(updated));
       return updated;
     });
@@ -105,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!user) return;
     try {
       const res = await fetch(`/api/orders?userId=${user.id}`);
@@ -116,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Failed to fetch orders:', err);
     }
-  };
+  }, [user]);
 
   const placeOrder = async (shipping?: Record<string, unknown>, payment?: Record<string, unknown>, total?: number) => {
     setIsCheckingOut(true);
@@ -154,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        loading,
         orders,
         cart,
         setAuthUser,
