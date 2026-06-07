@@ -239,7 +239,7 @@ export default function AdminProductsPage() {
         {/* Left Column: Form */}
         <div className="lg:col-span-1 p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm h-fit">
           <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white text-center border-b border-slate-100 dark:border-slate-800 pb-4">
-            {editingId ? '✏️ Ürünü Düzenle' : '✨ Yeni Ürün Ekle'}
+            {editingId ? '✏️ Ürünü Düzenle' : 'Yeni Ürün Ekle'}
           </h2>
 
           {status === 'success' && (

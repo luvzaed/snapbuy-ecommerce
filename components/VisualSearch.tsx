@@ -173,29 +173,30 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
       <div className="relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col animate-fade-in-up">
         {/* Glow border wrapper */}
         <div className="relative rounded-3xl p-px flex flex-col min-h-0" style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.5), rgba(59,130,246,0.3), rgba(139,92,246,0.4))" }}>
-          <div className="glass rounded-3xl overflow-hidden flex flex-col min-h-0" style={{ background: "#0d1424" }}>
+          {/* Modal surface — bg-white in light mode, dark colour in dark mode */}
+          <div className="bg-white dark:bg-[#0d1424] rounded-3xl overflow-hidden flex flex-col min-h-0">
 
             {/* Header — always visible */}
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.07] flex-shrink-0">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/[0.07] flex-shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center">
                   <ScanSearch className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-white font-bold text-base leading-none">Görsel Arama</h2>
-                  <p className="text-slate-500 text-xs mt-0.5">Görsel veya kamera ile ara</p>
+                  <h2 className="text-gray-900 dark:text-white font-bold text-base leading-none">Görsel Arama</h2>
+                  <p className="text-gray-500 dark:text-slate-400 text-xs mt-0.5">Görsel veya kamera ile ara</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Tabs — always visible */}
-            <div className="flex gap-1 p-3 mx-6 mt-4 rounded-xl bg-white/[0.04] border border-white/[0.06] flex-shrink-0">
+            <div className="flex gap-1 p-3 mx-6 mt-4 rounded-xl bg-gray-100 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] flex-shrink-0">
               {(["upload", "camera"] as Tab[]).map((t) => (
                 <button
                   key={t}
@@ -203,7 +204,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     tab === t
                       ? "gradient-brand text-white shadow-lg shadow-cyan-500/20"
-                      : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.05]"
+                      : "text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-200 dark:hover:bg-white/[0.05]"
                   }`}
                 >
                   {t === "upload" ? <Upload className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
@@ -219,17 +220,17 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                 <div className="flex flex-col flex-1 min-h-0">
                   {!preview ? (
                     <div
-                      className="relative border-2 border-dashed border-white/[0.12] rounded-2xl p-10 text-center cursor-pointer hover:border-cyan-500/40 hover:bg-cyan-500/[0.03] transition-all duration-300 group"
+                      className="relative border-2 border-dashed border-gray-200 dark:border-white/[0.12] rounded-2xl p-10 text-center cursor-pointer hover:border-cyan-500/40 hover:bg-cyan-500/[0.03] transition-all duration-300 group"
                       onClick={() => fileInputRef.current?.click()}
                       onDrop={handleDrop}
                       onDragOver={(e) => e.preventDefault()}
                     >
                       <div className="w-14 h-14 rounded-2xl glass-light flex items-center justify-center mx-auto mb-4 group-hover:border-cyan-500/30 group-hover:bg-cyan-500/10 transition-all">
-                        <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                        <ImageIcon className="w-6 h-6 text-gray-400 dark:text-slate-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors" />
                       </div>
-                      <p className="text-white font-semibold mb-1">Görseli buraya bırakın</p>
-                      <p className="text-slate-500 text-sm">veya dosya seçmek için tıklayın</p>
-                      <p className="text-slate-600 text-xs mt-3">PNG, JPG, WEBP — en fazla 10MB</p>
+                      <p className="text-gray-900 dark:text-white font-semibold mb-1">Görseli buraya bırakın</p>
+                      <p className="text-gray-500 dark:text-slate-500 text-sm">veya dosya seçmek için tıklayın</p>
+                      <p className="text-gray-400 dark:text-slate-600 text-xs mt-3">PNG, JPG, WEBP — en fazla 10MB</p>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -262,7 +263,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                   )}
 
                   {!preview && (
-                    <div className="relative rounded-2xl overflow-hidden bg-black/40 border border-white/[0.07]" style={{ aspectRatio: "16/9" }}>
+                    <div className="relative rounded-2xl overflow-hidden bg-gray-100 dark:bg-black/40 border border-gray-200 dark:border-white/[0.07]" style={{ aspectRatio: "16/9" }}>
                       <video
                         ref={videoRef}
                         className={`w-full h-full object-cover ${cameraActive ? "opacity-100" : "opacity-0"}`}
@@ -273,9 +274,9 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                       {!cameraActive && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                           <div className="w-16 h-16 rounded-2xl glass-light flex items-center justify-center">
-                            <Camera className="w-7 h-7 text-slate-400" />
+                            <Camera className="w-7 h-7 text-gray-400 dark:text-slate-400" />
                           </div>
-                          <p className="text-slate-400 text-sm">Kamera önizlemesi burada görünecek</p>
+                          <p className="text-gray-500 dark:text-slate-400 text-sm">Kamera önizlemesi burada görünecek</p>
                           <button
                             onClick={startCamera}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-brand text-white text-sm font-semibold hover:opacity-90 hover:scale-105 transition-all"
@@ -311,7 +312,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                         </button>
                         <button
                           onClick={stopCamera}
-                          className="px-4 py-3 rounded-xl glass-light text-slate-400 hover:text-white transition-all"
+                          className="px-4 py-3 rounded-xl glass-light text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-all"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -362,7 +363,7 @@ function PreviewSection({
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Preview image — always visible, never shrinks away */}
-      <div className="relative rounded-2xl overflow-hidden border border-white/[0.07] mb-4 flex-shrink-0">
+      <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-white/[0.07] mb-4 flex-shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={preview} alt="Önizleme" className="w-full object-cover max-h-52" />
         <button
@@ -383,8 +384,8 @@ function PreviewSection({
       )}
 
       {searchState === "searching" && (
-        <div className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-white/[0.05] border border-white/[0.08] text-slate-300">
-          <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+        <div className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] text-gray-600 dark:text-slate-300">
+          <Loader2 className="w-4 h-4 animate-spin text-cyan-500 dark:text-cyan-400" />
           <span className="text-sm font-medium">Görsel analiz ediliyor…</span>
         </div>
       )}
@@ -397,12 +398,12 @@ function PreviewSection({
               {error}
             </div>
           ) : results.length === 0 ? (
-            <div className="px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.08] text-slate-300 text-sm font-medium text-center">
+            <div className="px-4 py-3 rounded-xl bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] text-gray-600 dark:text-slate-300 text-sm font-medium text-center">
               Benzer ürün bulunamadı. Başka bir görsel deneyin.
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm font-medium">
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {results.length} benzer ürün bulundu
               </div>
@@ -412,24 +413,24 @@ function PreviewSection({
                     key={p.id}
                     href={`/product/${p.id}`}
                     onClick={onClose}
-                    className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:border-cyan-500/40 hover:bg-cyan-500/[0.05] transition-all group"
+                    className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] hover:border-cyan-500/40 hover:bg-cyan-50 dark:hover:bg-cyan-500/[0.05] transition-all group"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={p.image}
                       alt={p.name}
-                      className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-white/5"
+                      className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-gray-100 dark:bg-white/5"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate group-hover:text-cyan-300 transition-colors">
+                      <p className="text-gray-900 dark:text-white text-sm font-medium truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
                         {p.name}
                       </p>
-                      <p className="text-slate-500 text-xs truncate">{p.category}</p>
-                      <p className="text-cyan-400 text-sm font-semibold mt-0.5">
+                      <p className="text-gray-500 dark:text-slate-500 text-xs truncate">{p.category}</p>
+                      <p className="text-cyan-600 dark:text-cyan-400 text-sm font-semibold mt-0.5">
                         ₺{Number(p.price).toFixed(2)}
                       </p>
                     </div>
-                    <span className="flex-shrink-0 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-semibold">
+                    <span className="flex-shrink-0 px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
                       %{Math.round(p.similarity)} eşleşme
                     </span>
                   </Link>
@@ -439,7 +440,7 @@ function PreviewSection({
           )}
           <button
             onClick={onReset}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl glass-light text-slate-400 hover:text-white text-sm transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl glass-light text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white text-sm transition-all"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Başka bir görsel dene
           </button>

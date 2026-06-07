@@ -141,7 +141,9 @@ export default function RegisterPage() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xl">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Hesap oluştur</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Hesap oluştur
+            </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
               SnapBuy&apos;a bugün katılın — ücretsiz
             </p>
@@ -152,7 +154,7 @@ export default function RegisterPage() {
               id="name"
               label="Ad Soyad"
               type="text"
-              placeholder="John Doe"
+              placeholder="Adınızı ve soyadınızı girin"
               value={form.name}
               onChange={set('name')}
               error={errors.name}
@@ -198,10 +200,11 @@ export default function RegisterPage() {
                     {[1, 2, 3, 4].map((level) => (
                       <div
                         key={level}
-                        className={`h-full flex-1 transition-all duration-300 ${strength >= level
+                        className={`h-full flex-1 transition-all duration-300 ${
+                          strength >= level
                             ? strengthColors[strength]
                             : 'bg-transparent'
-                          }`}
+                        }`}
                       />
                     ))}
                   </div>
