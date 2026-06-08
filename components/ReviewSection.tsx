@@ -252,6 +252,7 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
               </label>
               <textarea
                 id="review-comment"
+                name="comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={4}

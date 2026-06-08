@@ -139,6 +139,9 @@ function ShopContent() {
         {/* Sort + result count */}
         <div className="flex items-center gap-3 shrink-0 flex-wrap">
           <select
+            id="shop-sort"
+            name="sort"
+            aria-label="Sıralama"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium px-3 py-2 rounded-xl shadow-sm focus:outline-none focus:border-cyan-500 cursor-pointer transition-colors"
@@ -167,6 +170,9 @@ function ShopContent() {
                 Ara
               </h3>
               <input
+                id="shop-search"
+                name="search"
+                aria-label="Ürün bul"
                 type="text"
                 placeholder="Ürün bul..."
                 value={searchQuery}
@@ -183,6 +189,9 @@ function ShopContent() {
               </h3>
               <div className="flex gap-2">
                 <input
+                  id="shop-min-price"
+                  name="minPrice"
+                  aria-label="Minimum fiyat"
                   type="number"
                   placeholder="Min ₺"
                   value={minPrice}
@@ -191,6 +200,9 @@ function ShopContent() {
                   className="w-1/2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition-all"
                 />
                 <input
+                  id="shop-max-price"
+                  name="maxPrice"
+                  aria-label="Maksimum fiyat"
                   type="number"
                   placeholder="Max ₺"
                   value={maxPrice}
@@ -329,7 +341,7 @@ function ShopContent() {
                           </span>
                         </div>
 
-                        <div className="w-1/2">
+                        <div className="shrink-0">
                           <AddToCartButton product={product} />
                         </div>
                       </div>

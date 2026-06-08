@@ -56,20 +56,22 @@ export default function Header() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (!searchQuery.trim()) {
-      setSuggestions([]);
-      setShowDropdown(false);
-      return;
-    }
-
+    // All setState runs inside the timeout callback (never synchronously in the
+    // effect body) to avoid cascading renders. An empty query clears instantly
+    // via a 0 ms delay; a non-empty query is debounced by 300 ms.
+    const q = searchQuery.trim().toLowerCase();
     debounceRef.current = setTimeout(() => {
-      const q = searchQuery.trim().toLowerCase();
+      if (!q) {
+        setSuggestions([]);
+        setShowDropdown(false);
+        return;
+      }
       const matches = allProducts
         .filter((p) => p.name.toLowerCase().includes(q))
         .slice(0, 6);
       setSuggestions(matches);
       setShowDropdown(true);
-    }, 300);
+    }, q ? 300 : 0);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -181,6 +183,9 @@ export default function Header() {
                 <Search className="h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-cyan-500 transition-colors" />
               </div>
               <input
+                id="header-search"
+                name="search"
+                aria-label="Ürün ara"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -404,23 +409,29 @@ export default function Header() {
           </div>
         </div>
 
+        {/* Mobile persistent search bar — always visible on small screens so
+            search never disappears behind the hamburger menu */}
+        <div className="md:hidden pb-3">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            </div>
+            <input
+              id="header-search-mobile"
+              name="search"
+              aria-label="Ürün ara"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Ürün ara..."
+              className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:bg-white dark:focus:bg-slate-800 shadow-inner"
+            />
+          </form>
+        </div>
+
         {/* Mobile Menu Expanded */}
         {menuOpen && (
           <div className="md:hidden pb-6 flex flex-col gap-1 animate-fade-in-up border-t border-slate-200 dark:border-slate-700 pt-4 mt-1 bg-white dark:bg-slate-900">
-            <div className="px-3 pb-3">
-              <form onSubmit={handleSearchSubmit} className="relative w-full">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-slate-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ürün ara..."
-                  className="w-full bg-slate-100 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:bg-white shadow-inner"
-                />
-              </form>
-            </div>
             <Link
               href="/"
               onClick={handleHomeClick}

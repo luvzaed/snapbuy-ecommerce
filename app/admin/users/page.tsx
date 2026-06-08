@@ -184,6 +184,9 @@ export default function AdminUsersPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
+            id="user-search"
+            name="search"
+            aria-label="Kullanıcı ara"
             type="text"
             placeholder="İsim veya e-posta ile ara..."
             value={searchQuery}
@@ -284,6 +287,9 @@ export default function AdminUsersPage() {
                   <div className="sm:col-span-2">
                     <div className="relative">
                       <select
+                        id={`user-role-${u.id}`}
+                        name="role"
+                        aria-label="Kullanıcı rolü"
                         value={u.role.toUpperCase()}
                         onChange={(e) => updateUserRole(u.id, e.target.value)}
                         disabled={isCurrentUser || isUpdating}

@@ -198,12 +198,14 @@ export default function ProfilePage() {
             <div className="space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                <label htmlFor="profile-name" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                   Ad Soyad
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    id="profile-name"
+                    name="name"
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
@@ -220,12 +222,14 @@ export default function ProfilePage() {
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                <label htmlFor="profile-email" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                   E-posta Adresi
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    id="profile-email"
+                    name="email"
                     type="email"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
@@ -358,12 +362,15 @@ export default function ProfilePage() {
             <div className="space-y-4">
               {/* Current Password */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                <label htmlFor="current-password" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                   Mevcut Şifre
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    id="current-password"
+                    name="currentPassword"
+                    autoComplete="current-password"
                     type={showCurrentPw ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
@@ -395,12 +402,15 @@ export default function ProfilePage() {
 
               {/* New Password */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                <label htmlFor="new-password" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                   Yeni Şifre
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    id="new-password"
+                    name="newPassword"
+                    autoComplete="new-password"
                     type={showNewPw ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -432,12 +442,15 @@ export default function ProfilePage() {
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                <label htmlFor="confirm-password" className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                   Yeni Şifre Tekrarı
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    autoComplete="new-password"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}

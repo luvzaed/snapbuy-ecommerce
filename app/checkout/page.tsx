@@ -86,12 +86,13 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+      <label htmlFor={name} className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
         {label}
       </label>
       <div className="relative">
         <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
+          id={name}
           type={type}
           name={name}
           value={value}

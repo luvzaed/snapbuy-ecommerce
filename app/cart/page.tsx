@@ -23,12 +23,13 @@ function CartItemRow({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 border shadow-sm rounded-2xl p-4 flex items-center gap-4 transition-all duration-300 ${
+      className={`bg-white dark:bg-slate-900 border shadow-sm rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 transition-all duration-300 ${
         outOfStock
           ? 'border-red-200 dark:border-red-900/50'
           : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:scale-[1.01]'
       }`}
     >
+      <div className="flex items-center gap-4 flex-1 min-w-0 w-full">
       <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -57,7 +58,9 @@ function CartItemRow({
           </p>
         )}
       </div>
+      </div>
 
+      <div className="flex items-center justify-between gap-4 w-full sm:w-auto">
       {/* Quantity Controls */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
         <button
@@ -91,6 +94,7 @@ function CartItemRow({
         >
           <Trash2 className="w-4 h-4" />
         </button>
+      </div>
       </div>
     </div>
   );

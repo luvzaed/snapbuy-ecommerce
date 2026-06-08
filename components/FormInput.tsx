@@ -9,6 +9,7 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export default function FormInput({
   label,
   id,
+  name,
   type,
   error,
   ...props
@@ -29,6 +30,7 @@ export default function FormInput({
       <div className="relative">
         <input
           id={id}
+          name={name ?? id}
           type={inputType}
           className={`w-full bg-slate-50 dark:bg-white/5 border ${
             error

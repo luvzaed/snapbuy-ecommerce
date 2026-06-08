@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '@/lib/types';
@@ -26,38 +26,50 @@ interface Props {
 }
 
 export default function ProductMarquee({ products, loading = false }: Props) {
-  // Stable random selection — shuffled once when products load
+  // A random seed captured once per mount (lazy initializer). Keeping the
+  // randomness here means the shuffle in useMemo stays pure/deterministic.
+  const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff));
+
+  // Stable random selection — up to 8 products, shuffled deterministically
+  // from `seed` so the order is stable across re-renders but varies per load.
   const items = useMemo(() => {
     if (!products.length) return [];
-    const shuffled = [...products].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 8);
-  }, [products]);
+    const arr = [...products];
+    // Fisher–Yates driven by a small LCG PRNG seeded once (pure given inputs).
+    let s = seed;
+    for (let i = arr.length - 1; i > 0; i--) {
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      const j = s % (i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 8);
+  }, [products, seed]);
 
   const trackRef  = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);        // current translateX in px
   const pausedRef = useRef(false);    // hover-pause flag
-  const rafRef    = useRef<number>(0);
 
   // Width of one copy of the doubled track; looping resets at this boundary
   const halfWidth = items.length * UNIT;
 
-  // rAF loop — direct DOM mutation avoids React re-renders every frame
-  const tick = useCallback(() => {
-    if (!pausedRef.current && trackRef.current && halfWidth > 0) {
-      // Speed: complete one full loop in ~80 s at 60 fps
-      const speed = halfWidth / (80 * 60);
-      offsetRef.current += speed;
-      if (offsetRef.current >= halfWidth) offsetRef.current -= halfWidth;
-      trackRef.current.style.transform = `translateX(-${offsetRef.current}px)`;
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, [halfWidth]);
-
   useEffect(() => {
     if (!items.length) return;
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [tick, items.length]);
+    let rafId = 0;
+    // rAF loop — direct DOM mutation avoids React re-renders every frame.
+    // Defined locally so it can recurse without referencing an outer callback.
+    const loop = () => {
+      if (!pausedRef.current && trackRef.current && halfWidth > 0) {
+        // Speed: complete one full loop in ~80 s at 60 fps
+        const speed = halfWidth / (80 * 60);
+        offsetRef.current += speed;
+        if (offsetRef.current >= halfWidth) offsetRef.current -= halfWidth;
+        trackRef.current.style.transform = `translateX(-${offsetRef.current}px)`;
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [items.length, halfWidth]);
 
   // Arrow button: jump one card slot forward or back with a brief smooth transition
   const nudge = useCallback((dir: 1 | -1) => {

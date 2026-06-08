@@ -77,6 +77,8 @@ export default function NewsletterSignup() {
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Email input */}
               <input
+                id="newsletter-email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => {

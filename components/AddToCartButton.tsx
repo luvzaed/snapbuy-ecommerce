@@ -19,7 +19,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
     <button
       onClick={handleAdd}
       disabled={product.stock === 0}
-      className={`flex-1 flex items-center justify-center gap-3 font-bold py-4 px-8 rounded-xl transition-all duration-300 ${
+      className={`flex-1 flex items-center justify-center gap-2 font-bold text-sm py-3.5 px-3 sm:px-6 rounded-xl transition-all duration-300 ${
         added
           ? 'bg-emerald-500/15 dark:bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
           : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:opacity-90 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/30'

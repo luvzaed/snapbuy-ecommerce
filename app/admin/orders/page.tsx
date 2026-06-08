@@ -376,6 +376,9 @@ export default function AdminOrdersPage() {
                     {/* Status Dropdown */}
                     <div className="relative">
                       <select
+                        id={`order-status-${order.id}`}
+                        name="status"
+                        aria-label="Sipariş durumu"
                         value={statusKey}
                         onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                         disabled={isUpdating}

@@ -233,6 +233,9 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
                       <p className="text-gray-400 dark:text-slate-600 text-xs mt-3">PNG, JPG, WEBP — en fazla 10MB</p>
                       <input
                         ref={fileInputRef}
+                        id="visual-search-file"
+                        name="image"
+                        aria-label="Görsel ile arama dosyası"
                         type="file"
                         accept="image/*"
                         className="hidden"
