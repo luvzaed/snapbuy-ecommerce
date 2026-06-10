@@ -15,10 +15,10 @@ function bgKey(category: string): string {
   return 'default';
 }
 
-// Card slot: 220px wide + 16px gap
-const CARD_W = 220;
-const GAP    = 16;
-const UNIT   = CARD_W + GAP; // 236 px per slot
+// Gap between cards (Tailwind `gap-4`). The card width itself is responsive
+// (see the `.mq-card` clamp in the <style> block), so the per-slot scroll unit
+// is measured from the DOM at runtime rather than hard-coded here.
+const GAP = 16;
 
 interface Props {
   products: Product[];
@@ -49,38 +49,61 @@ export default function ProductMarquee({ products, loading = false }: Props) {
   const offsetRef = useRef(0);        // current translateX in px
   const pausedRef = useRef(false);    // hover-pause flag
 
-  // Width of one copy of the doubled track; looping resets at this boundary
-  const halfWidth = items.length * UNIT;
+  // Live scroll metrics, measured from the rendered cards so they stay correct
+  // as the responsive card width changes (window resize, browser zoom, etc.):
+  //   unit — one card + gap (the per-slot distance the arrows jump)
+  //   half — width of one copy of the doubled track; the loop resets here
+  const metricsRef = useRef({ unit: 0, half: 0 });
+
+  // Recompute metrics from the first rendered card. Called on mount and whenever
+  // a ResizeObserver reports the track changed size (covers zoom + resize).
+  const measure = useCallback(() => {
+    const first = trackRef.current?.firstElementChild as HTMLElement | null;
+    if (!first || !items.length) return;
+    const unit = first.offsetWidth + GAP;
+    const half = unit * items.length;
+    metricsRef.current = { unit, half };
+    // Keep the current offset inside the new loop boundary after a resize.
+    if (half > 0) offsetRef.current %= half;
+  }, [items.length]);
 
   useEffect(() => {
     if (!items.length) return;
+    measure();
+
+    const track = trackRef.current;
+    const ro = new ResizeObserver(measure);
+    if (track) ro.observe(track);
+
     let rafId = 0;
     // rAF loop — direct DOM mutation avoids React re-renders every frame.
     // Defined locally so it can recurse without referencing an outer callback.
     const loop = () => {
-      if (!pausedRef.current && trackRef.current && halfWidth > 0) {
+      const { half } = metricsRef.current;
+      if (!pausedRef.current && trackRef.current && half > 0) {
         // Speed: complete one full loop in ~80 s at 60 fps
-        const speed = halfWidth / (80 * 60);
+        const speed = half / (80 * 60);
         offsetRef.current += speed;
-        if (offsetRef.current >= halfWidth) offsetRef.current -= halfWidth;
+        if (offsetRef.current >= half) offsetRef.current -= half;
         trackRef.current.style.transform = `translateX(-${offsetRef.current}px)`;
       }
       rafId = requestAnimationFrame(loop);
     };
     rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [items.length, halfWidth]);
+    return () => { cancelAnimationFrame(rafId); ro.disconnect(); };
+  }, [items.length, measure]);
 
   // Arrow button: jump one card slot forward or back with a brief smooth transition
   const nudge = useCallback((dir: 1 | -1) => {
     const track = trackRef.current;
-    if (!track || halfWidth === 0) return;
+    const { unit, half } = metricsRef.current;
+    if (!track || half === 0) return;
     track.style.transition = 'transform 0.35s ease';
-    offsetRef.current = ((offsetRef.current + dir * UNIT) % halfWidth + halfWidth) % halfWidth;
+    offsetRef.current = ((offsetRef.current + dir * unit) % half + half) % half;
     track.style.transform = `translateX(-${offsetRef.current}px)`;
     // Remove transition so the continuous rAF scroll stays smooth
     setTimeout(() => { if (trackRef.current) trackRef.current.style.transition = ''; }, 400);
-  }, [halfWidth]);
+  }, []);
 
   // ── Loading skeleton ─────────────────────────────────────────────────────────
   if (loading) {
@@ -121,6 +144,14 @@ export default function ProductMarquee({ products, loading = false }: Props) {
         .mq-bg-spor       { background: linear-gradient(150deg, #f0fdf4, #dcfce7); }
         .mq-bg-giyim      { background: linear-gradient(150deg, #faf5ff, #ede9fe); }
         .mq-bg-default    { background: linear-gradient(150deg, #f8fafc, #f1f5f9); }
+
+        /* Responsive card sizing. The card never drops below 220px (so it stays
+           legible at normal zoom) and grows on wide / zoomed-out viewports up to
+           300px instead of rendering as a tiny, squished tile. aspect-ratio keeps
+           the original 220×280 proportions as the width scales; the image takes
+           the top 65% and the info panel the rest. */
+        .mq-card      { width: clamp(220px, 15vw, 300px); aspect-ratio: 11 / 14; }
+        .mq-card-img  { flex: 0 0 65%; }
       `}</style>
 
       {/* ── Section header ── */}
@@ -166,10 +197,10 @@ export default function ProductMarquee({ products, loading = false }: Props) {
               <Link
                 key={`${product.id}-${idx}`}
                 href={`/product/${product.id}`}
-                className="group w-[220px] h-[280px] flex-shrink-0 flex flex-col rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-white/10 shadow-[0_4px_12px_rgba(15,23,42,0.04)] hover:shadow-xl hover:scale-[1.03] transition-all duration-300"
+                className="mq-card group flex-shrink-0 flex flex-col rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-white/10 shadow-[0_4px_12px_rgba(15,23,42,0.04)] hover:shadow-xl hover:scale-[1.03] transition-all duration-300"
               >
                 {/* ── Top (~65%) — pastel gradient, image floats via multiply ── */}
-                <div className={`mq-bg-${bgKey(product.category)} relative h-[182px] flex-shrink-0 overflow-hidden`}>
+                <div className={`mq-card-img mq-bg-${bgKey(product.category)} relative overflow-hidden`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={product.image}

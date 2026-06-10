@@ -215,16 +215,6 @@ export default function CheckoutPage() {
     }
   }, [loading, user, cart, router]);
 
-  // Pre-fill name from user (must be above the early return to preserve hook order)
-  useEffect(() => {
-    if (user?.name && !shipping.fullName) {
-      const timer = setTimeout(() => {
-        setShipping((prev) => ({ ...prev, fullName: user?.name || '' }));
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [user, shipping.fullName]);
-
   // Sync checkout steps with browser history (back button goes one step back)
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
@@ -400,7 +390,7 @@ export default function CheckoutPage() {
                     onChange={(e) =>
                       setShipping({ ...shipping, fullName: e.target.value })
                     }
-                    placeholder="John Doe"
+                    placeholder="Adınız ve Soyadınız"
                     icon={User}
                     error={errors.fullName}
                   />

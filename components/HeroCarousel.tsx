@@ -36,6 +36,8 @@ function bgKey(category: string): string {
 }
 
 const INTERVAL = 5000;
+// Must match the slide track's `transition-transform duration-500` below.
+const TRANSITION_MS = 500;
 
 interface HeroCarouselProps {
   // Passed in from page.tsx — already fetched, no duplicate request needed.
@@ -45,7 +47,13 @@ interface HeroCarouselProps {
 export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // `true` while a slide transition is in flight. A ref (not just the state)
+  // so the guard below reads the latest value synchronously between renders,
+  // blocking the burst of clicks that arrive faster than React re-renders.
+  const lockRef = useRef(false);
+  const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Build slides at render time; missing product IDs are silently skipped.
   const slides: Slide[] = SLIDE_DEFS.reduce<Slide[]>((acc, def) => {
@@ -54,13 +62,37 @@ export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
     return acc;
   }, []);
 
+  // Move to `next(current)`, but ignore the request if a transition is still
+  // running. The lock releases once the 500ms slide animation completes, so the
+  // arrows/dots can't stack animations when clicked rapidly.
+  const go = useCallback((nextIndex: (c: number) => number) => {
+    if (lockRef.current) return;
+    lockRef.current = true;
+    setTransitioning(true);
+    setCurrent(nextIndex);
+    if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+    unlockTimerRef.current = setTimeout(() => {
+      lockRef.current = false;
+      setTransitioning(false);
+    }, TRANSITION_MS);
+  }, []);
+
   const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % slides.length);
-  }, [slides.length]);
+    go((c) => (c + 1) % slides.length);
+  }, [go, slides.length]);
 
   const prev = useCallback(() => {
-    setCurrent((c) => (c - 1 + slides.length) % slides.length);
-  }, [slides.length]);
+    go((c) => (c - 1 + slides.length) % slides.length);
+  }, [go, slides.length]);
+
+  const goTo = useCallback((i: number) => {
+    go(() => i);
+  }, [go]);
+
+  // Release the lock timer on unmount so it can't fire after teardown.
+  useEffect(() => () => {
+    if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+  }, []);
 
   // Auto-advance — paused on hover, disabled when only 1 slide
   useEffect(() => {
@@ -179,14 +211,16 @@ export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
           <>
             <button
               onClick={prev}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-[#131b2e] dark:text-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md"
+              disabled={transitioning}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-[#131b2e] dark:text-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               aria-label="Önceki slayt"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={next}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-[#131b2e] dark:text-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md"
+              disabled={transitioning}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white dark:bg-slate-800 border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-[#131b2e] dark:text-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               aria-label="Sonraki slayt"
             >
               <ChevronRight className="w-5 h-5" />
@@ -200,7 +234,7 @@ export default function HeroCarousel({ products = [] }: HeroCarouselProps) {
             {slides.map((s, i) => (
               <button
                 key={s.productId}
-                onClick={() => setCurrent(i)}
+                onClick={() => goTo(i)}
                 aria-label={`${i + 1}. slayt`}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   i === current
