@@ -13,17 +13,10 @@ export async function GET(req: NextRequest) {
     const userId = req.nextUrl.searchParams.get("userId");
     const fetchAll = req.nextUrl.searchParams.get("all");
 
-    // Authenticate the session from the cookie
-    const sessionCookie = req.cookies.get("auth_session")?.value;
-    if (!sessionCookie) {
+    // Authenticate the session from the signed cookie
+    const session = getSession(req);
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    let session;
-    try {
-      session = JSON.parse(sessionCookie);
-    } catch {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
     // Admin: fetch all orders with user info

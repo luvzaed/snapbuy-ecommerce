@@ -4,20 +4,32 @@
 //   node scripts/api-smoke-test.mjs            (defaults to http://localhost:3000)
 //   API_BASE=http://localhost:3001 node scripts/api-smoke-test.mjs
 //
-// The app authenticates via an unsigned JSON `auth_session` cookie, so this
-// script constructs admin/user cookies exactly the way the login route does
-// (encodeURIComponent(JSON.stringify({ id, role }))) to exercise protected
-// routes. All resources it creates (user, product, order, review, newsletter)
-// are cleaned up at the end.
+// The app authenticates via a signed JWT `auth_session` cookie, so this script
+// mints admin/user cookies with the same secret and algorithm the login route
+// uses (jwt.sign({ id, role }, JWT_SECRET, { algorithm: 'HS256' })) to exercise
+// protected routes. All resources it creates (user, product, order, review,
+// newsletter) are cleaned up at the end.
+
+import 'dotenv/config';
+import jwt from 'jsonwebtoken';
 
 const BASE = process.env.API_BASE || 'http://localhost:3000';
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error(
+    'JWT_SECRET is not set. Add it to .env so the smoke test can mint signed session cookies.',
+  );
+  process.exit(1);
+}
 
 const results = [];
 let passCount = 0;
 let failCount = 0;
 
-// Build a cookie header the same way the app serializes it.
-const cookieFor = (obj) => `auth_session=${encodeURIComponent(JSON.stringify(obj))}`;
+// Build a cookie header by signing the session the same way the app does.
+const cookieFor = (obj) =>
+  `auth_session=${jwt.sign(obj, JWT_SECRET, { algorithm: 'HS256', expiresIn: '7d' })}`;
 
 /**
  * Run one request and assert on the status code.

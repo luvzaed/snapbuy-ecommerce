@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/api-auth";
 
 // GET /api/reviews?productId=X — fetch reviews for a product
 export async function GET(req: NextRequest) {
@@ -34,17 +35,12 @@ export async function POST(req: NextRequest) {
     const { userId, productId, rating, comment } = body;
 
     // Auth check: verify the user is logged in and matches the userId
-    const sessionCookie = req.cookies.get("auth_session")?.value;
-    if (!sessionCookie) {
+    const session = getSession(req);
+    if (!session) {
       return NextResponse.json({ error: "Login required to post a review" }, { status: 401 });
     }
-    try {
-      const session = JSON.parse(sessionCookie);
-      if (session.id !== Number(userId)) {
-        return NextResponse.json({ error: "You can only post reviews as yourself" }, { status: 403 });
-      }
-    } catch {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    if (session.id !== Number(userId)) {
+      return NextResponse.json({ error: "You can only post reviews as yourself" }, { status: 403 });
     }
 
     if (!userId || !productId || !rating) {

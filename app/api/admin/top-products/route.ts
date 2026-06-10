@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/api-auth";
 
 // GET /api/admin/top-products — top 5 products by units sold (admin only)
 export async function GET(req: NextRequest) {
-  const sessionCookie = req.cookies.get("auth_session")?.value;
-  if (!sessionCookie) {
+  const session = getSession(req);
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  let session;
-  try {
-    session = JSON.parse(sessionCookie);
-    if (session.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+  if (session.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {

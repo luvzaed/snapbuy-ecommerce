@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyPassword, hashPassword, isHashed } from '@/lib/password';
+import { signSession } from '@/lib/api-auth';
 
 export async function POST(req: Request) {
   try {
@@ -65,8 +66,11 @@ export async function POST(req: Request) {
       { status: 200 },
     );
 
-    // Set auth cookie so server-side middleware can verify access
-    response.cookies.set('auth_session', JSON.stringify({ id: user.id, role: userData.role }), {
+    // Set a signed JWT so the server can verify the session's integrity on
+    // every request. The role is baked into the signature, so editing the
+    // cookie in the browser invalidates the token instead of granting access.
+    const token = signSession({ id: user.id, role: userData.role });
+    response.cookies.set('auth_session', token, {
       httpOnly: false, // Needs to be readable for client-side logout clearing
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

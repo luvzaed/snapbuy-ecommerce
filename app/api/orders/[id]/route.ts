@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/api-auth";
 
 // PATCH /api/orders/[id] — update order status (admin only)
 export async function PATCH(
@@ -9,20 +10,13 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    // Authenticate the session from the cookie
-    const sessionCookie = req.cookies.get("auth_session")?.value;
-    if (!sessionCookie) {
+    // Authenticate the session from the signed cookie
+    const session = getSession(req);
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    let session;
-    try {
-      session = JSON.parse(sessionCookie);
-      if (session.role !== "admin") {
-        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-      }
-    } catch {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    if (session.role !== "admin") {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
     const body = await req.json();
@@ -66,19 +60,12 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const sessionCookie = req.cookies.get("auth_session")?.value;
-  if (!sessionCookie) {
+  const session = getSession(req);
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  let session;
-  try {
-    session = JSON.parse(sessionCookie);
-    if (session.role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+  if (session.role !== "admin") {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
   try {
@@ -102,17 +89,10 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Authenticate the session from the cookie
-    const sessionCookie = req.cookies.get("auth_session")?.value;
-    if (!sessionCookie) {
+    // Authenticate the session from the signed cookie
+    const session = getSession(req);
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    let session;
-    try {
-      session = JSON.parse(sessionCookie);
-    } catch {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
     const order = await prisma.order.findUnique({
