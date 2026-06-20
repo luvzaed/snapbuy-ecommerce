@@ -76,7 +76,7 @@ export default function Footer() {
             <div className="flex flex-col gap-2 mt-5">
               {' '}
               {[
-                { Icon: Mail, text: 'zzaedalaa@gmail.com' },
+                { Icon: Mail, text: 'zaid.alaa@ogr.gelisim.edu.tr' },
                 { Icon: Phone, text: '0555 170 27 40' },
                 { Icon: MapPin, text: 'İstanbul, Türkiye' },
               ].map(({ Icon, text }) => (

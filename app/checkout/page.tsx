@@ -86,7 +86,10 @@ function InputField({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+      <label
+        htmlFor={name}
+        className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider"
+      >
         {label}
       </label>
       <div className="relative">
@@ -114,7 +117,8 @@ function InputField({
 }
 
 export default function CheckoutPage() {
-  const { user, loading, cart, placeOrder, isCheckingOut, updateQuantity } = useAuth();
+  const { user, loading, cart, placeOrder, isCheckingOut, updateQuantity } =
+    useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   // True when the user opened a step via "Düzenle" from Step 3 (Review).
@@ -240,8 +244,11 @@ export default function CheckoutPage() {
 
   if (!user || cart.length === 0) return null;
 
-  const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const tax = subtotal * 0.20;
+  const subtotal = cart.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0,
+  );
+  const tax = subtotal * 0.2;
   const total = subtotal + tax;
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -260,10 +267,13 @@ export default function CheckoutPage() {
 
   const validatePayment = () => {
     const errs: Record<string, string> = {};
-    if (!payment.cardName.trim()) errs.cardName = 'Kart üzerindeki isim gerekli';
+    if (!payment.cardName.trim())
+      errs.cardName = 'Kart üzerindeki isim gerekli';
     const digits = payment.cardNumber.replace(/\s/g, '');
-    if (digits.length < 16) errs.cardNumber = 'Geçerli 16 haneli kart numarası girin';
-    if (payment.expiry.length < 5) errs.expiry = 'Geçerli son kullanma tarihi girin (AA/YY)';
+    if (digits.length < 16)
+      errs.cardNumber = 'Geçerli 16 haneli kart numarası girin';
+    if (payment.expiry.length < 5)
+      errs.expiry = 'Geçerli son kullanma tarihi girin (AA/YY)';
     if (payment.cvv.length < 3) errs.cvv = 'Geçerli CVV girin';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -300,7 +310,6 @@ export default function CheckoutPage() {
       toast.error('Sipariş oluşturulamadı. Lütfen tekrar deneyin.');
     }
   };
-
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
@@ -399,7 +408,10 @@ export default function CheckoutPage() {
                     name="phone"
                     value={shipping.phone}
                     onChange={(e) =>
-                      setShipping({ ...shipping, phone: e.target.value.replace(/\D/g, '').slice(0, 11) })
+                      setShipping({
+                        ...shipping,
+                        phone: e.target.value.replace(/\D/g, '').slice(0, 11),
+                      })
                     }
                     placeholder="05551234567"
                     icon={Phone}
@@ -449,7 +461,10 @@ export default function CheckoutPage() {
                     name="zip"
                     value={shipping.zip}
                     onChange={(e) =>
-                      setShipping({ ...shipping, zip: e.target.value.replace(/\D/g, '').slice(0, 5) })
+                      setShipping({
+                        ...shipping,
+                        zip: e.target.value.replace(/\D/g, '').slice(0, 5),
+                      })
                     }
                     placeholder="10001"
                     icon={Hash}
@@ -480,7 +495,7 @@ export default function CheckoutPage() {
                   onChange={(e) =>
                     setPayment({ ...payment, cardName: e.target.value })
                   }
-                  placeholder="John Doe"
+                  placeholder="Adınızı ve soyadınızı girin"
                   icon={User}
                   error={errors.cardName}
                 />
@@ -495,7 +510,7 @@ export default function CheckoutPage() {
                       cardNumber: formatCardNumber(e.target.value),
                     })
                   }
-                  placeholder="4242 4242 4242 4242"
+                  placeholder=""
                   icon={CreditCard}
                   maxLength={19}
                   error={errors.cardNumber}
@@ -534,7 +549,6 @@ export default function CheckoutPage() {
                   />
                 </div>
               </div>
-
             </div>
           )}
 
@@ -578,7 +592,9 @@ export default function CheckoutPage() {
                     {shipping.city}, {shipping.state} {shipping.zip}
                   </p>
                   <p>{shipping.country}</p>
-                  <p className="text-slate-500 dark:text-slate-400">{shipping.phone}</p>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    {shipping.phone}
+                  </p>
                 </div>
               </div>
 
@@ -607,7 +623,8 @@ export default function CheckoutPage() {
                 <div className="text-slate-600 dark:text-slate-300 text-sm space-y-0.5">
                   <p className="font-medium">{payment.cardName}</p>
                   <p>
-                    •••• •••• •••• {payment.cardNumber.replace(/\s/g, '').slice(-4)}
+                    •••• •••• ••••{' '}
+                    {payment.cardNumber.replace(/\s/g, '').slice(-4)}
                   </p>
                   <p className="text-slate-500 dark:text-slate-400">
                     Son kullanma: {payment.expiry}
@@ -641,11 +658,22 @@ export default function CheckoutPage() {
                           {item.product.name}
                         </p>
                         <p className="text-slate-500 dark:text-slate-400 text-xs">
-                          Adet: {item.quantity} × ₺{item.product.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          Adet: {item.quantity} × ₺
+                          {item.product.price.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </p>
                       </div>
                       <p className="text-slate-900 dark:text-white font-bold text-sm">
-                        ₺{(item.product.price * item.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₺
+                        {(item.product.price * item.quantity).toLocaleString(
+                          'en-US',
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        )}
                       </p>
                     </div>
                   ))}
@@ -686,7 +714,11 @@ export default function CheckoutPage() {
                 ) : (
                   <>
                     <Lock className="w-4 h-4" />
-                    Sipariş Ver — ₺{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    Sipariş Ver — ₺
+                    {total.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </>
                 )}
               </button>
@@ -723,7 +755,11 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                   <p className="text-slate-900 dark:text-white text-xs font-bold">
-                    ₺{(item.product.price * item.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₺
+                    {(item.product.price * item.quantity).toLocaleString(
+                      'en-US',
+                      { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+                    )}
                   </p>
                 </div>
               ))}
@@ -732,7 +768,13 @@ export default function CheckoutPage() {
             <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex flex-col gap-2.5">
               <div className="flex justify-between text-slate-600 dark:text-slate-300 text-sm">
                 <span>Ara Toplam</span>
-                <span className="font-medium">₺{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-medium">
+                  ₺
+                  {subtotal.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-300 text-sm">
                 <span>Kargo</span>
@@ -740,11 +782,23 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-300 text-sm">
                 <span>KDV (%20)</span>
-                <span className="font-medium">₺{tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-medium">
+                  ₺
+                  {tax.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between text-slate-900 dark:text-white font-bold text-lg">
                 <span>Toplam</span>
-                <span className="text-gradient">₺{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-gradient">
+                  ₺
+                  {total.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
               </div>
             </div>
           </div>
@@ -753,4 +807,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-

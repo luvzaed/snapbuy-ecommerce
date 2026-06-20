@@ -111,6 +111,13 @@ export default function RegisterPage() {
           toast.success('Hesabınız oluşturuldu. Lütfen giriş yapın.');
           router.push('/login');
         }
+      } else if (response.status === 409) {
+        // Email already registered — guide the user toward logging in instead
+        // of leaving them staring at a raw "Email already exists" string.
+        setErrors({
+          email:
+            'Bu e-posta adresiyle bir hesap zaten var. Bunun yerine giriş yapmayı deneyin.',
+        });
       } else {
         const data = await response.json();
         setErrors({
