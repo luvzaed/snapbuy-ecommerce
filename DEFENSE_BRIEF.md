@@ -326,3 +326,49 @@ Yes — CLIP measures visual/semantic similarity, not identity. Two similar phon
 - [ ] Be ready to **own** the three honest gaps unprompted: (1) no evaluation methodology, (2) pgvector is dead/wrong-dimension, (3) index can go stale because reindex is best-effort.
 - [ ] Know the magic numbers cold: **512-dim**, **N=16 (fix it)**, **TOP_K=3**, **threshold 0.55**, **HS256 / 7-day JWT**, **bcrypt 10 rounds**, **20% tax**.
 - [ ] Optional cleanups that pre-empt cheap shots: remove the `fs` junk dependency; unify the "NexaShop" title in `main.py:111` to SnapBuy; make the search proxy URL configurable like `reindex.ts`.
+
+---
+
+## 7. Known Limitations — Production Upgrade Path
+
+Each item: what the code does today, why that's a limitation, and the production fix. No softening — these are real and an examiner can find them.
+
+### 7.1 `auth_session` cookie is `httpOnly: false` (XSS exposure)
+**Current:** The login route sets the JWT cookie with `httpOnly: false` (`app/api/users/login/route.ts:74`), explicitly so client-side JS can read/clear it during logout.
+**Limitation:** A cookie readable by JavaScript is readable by *any* injected script. A single XSS bug anywhere on the site lets an attacker exfiltrate the token and fully impersonate the user — there is no second factor and the token alone is sufficient.
+**Production fix:** Set `httpOnly: true` and stop reading the cookie on the client. Move logout to a server endpoint that clears the cookie via `Set-Cookie`. Pair with `Secure` always-on (not just in production) and a strict `SameSite` policy. The client should infer auth state from an API call, never from the raw token.
+
+### 7.2 JWT has no server-side revocation, 7-day expiry
+**Current:** `signSession()` issues an HS256 JWT with `expiresIn: '7d'` (`lib/api-auth.ts:12,29`). "Logout" only clears client state (`lib/auth-context.tsx:56`); the server never invalidates anything.
+**Limitation:** A stolen or leaked token stays valid for up to 7 days regardless of logout, password change, or role downgrade. There is no way to kill a session. Combined with 7.1, the blast radius of a token theft is large.
+**Production fix:** Shorten access-token lifetime to minutes and add refresh tokens, *or* keep a server-side session/revocation store (a `sessionId` claim checked against a Redis/DB allow- or deny-list on each request). On logout, password change, or role change, revoke the relevant session IDs immediately.
+
+### 7.3 No rate-limiting on the login endpoint
+**Current:** `POST /api/users/login` (`app/api/users/login/route.ts`) accepts unlimited attempts; there is no counter, lockout, delay, or CAPTCHA.
+**Limitation:** Credential brute-force and password-spraying are unthrottled. bcrypt (10 rounds) slows each guess but does not stop an attacker making thousands of attempts against weak passwords, and there's no alerting.
+**Production fix:** Add per-IP and per-account rate limiting (e.g. a sliding-window limiter backed by Redis), exponential backoff / temporary lockout after N failures, and optionally a CAPTCHA after a threshold. Log and alert on bursts of failed logins.
+
+### 7.4 `next/image` allows any remote host
+**Current:** `next.config.ts:7-10` sets `remotePatterns` to `hostname: "**"` for both http and https, to avoid "hostname not configured" errors when an admin pastes an arbitrary image URL.
+**Limitation:** The Next.js image optimizer will now fetch and proxy *any* URL. That turns the server into an open image proxy and a mild SSRF amplifier — it can be pointed at internal addresses or used to mask traffic origin.
+**Production fix:** Restrict `remotePatterns` to a known allow-list of image hosts (the CDN / object-store domains you actually use). For admin-supplied images, upload to your own storage and serve from your own domain rather than hot-linking arbitrary hosts.
+
+### 7.5 Reindex on product creation is fire-and-forget with no retry queue
+**Current:** Product create/update/delete call `triggerVisualSearchReindex()` (`lib/reindex.ts`), an un-awaited `fetch` whose only failure handling is a `console.warn`. The product mutation succeeds regardless.
+**Limitation:** If the Python sidecar is down (or the request fails) at the moment of the mutation, the index is never updated and nothing retries it. The product silently stays out of visual search. This is exactly why the live index drifted out of sync with the database.
+**Production fix:** Replace the fire-and-forget call with a durable job (a queue such as BullMQ/Redis, or a DB-backed outbox) that retries with backoff until the sidecar confirms the reindex. Alternatively run a periodic reconciliation job that diffs the DB against the index and re-embeds anything missing.
+
+### 7.6 No evaluation methodology for visual search
+**Current:** There is no labeled test set and no accuracy metric anywhere in the repo. `SIMILARITY_THRESHOLD = 0.55` and `TOP_K = 3` are empirically tuned constants — the code comment itself calls 0.55 "a good starting point" (`visual-search-server/main.py:54`).
+**Limitation:** I cannot quantify precision, recall, or how 0.55 was justified. Whether the feature "works well" is an assertion, not a measurement, and the threshold could be over- or under-filtering with no evidence either way.
+**Production fix:** Build a labeled query set (query images mapped to their correct catalog product), then measure precision@1, recall@3, and mAP. Sweep the threshold on a held-out split to choose it by F1 rather than by eye, and re-evaluate whenever the catalog or model changes. Report the numbers in the thesis instead of a hand-tuned constant.
+
+### 7.7 Linear-scan cosine similarity does not scale
+**Current:** Search stacks all embeddings into one in-memory NumPy matrix and computes `np.dot(matrix, query)` over every product on every query (`visual-search-server/main.py:207`) — an exact O(N·D) full scan, with the whole matrix held in a single process.
+**Limitation:** This is fine at the current tiny N, but it's exact brute force with no index. It scales acceptably to roughly the ~10k–100k-vector range before query latency, single-process serialization, and the requirement to hold the entire matrix in RAM become problems. There is no approximate-nearest-neighbor structure to amortize the cost.
+**Production fix:** Move to an approximate-nearest-neighbor index — FAISS (HNSW/IVF) for an in-process library, or a vector database (pgvector with an HNSW index, or Qdrant/Milvus) for a managed, network-accessible, horizontally scalable store. These give sub-linear search and proper persistence/concurrency instead of a pickle reloaded into one process.
+
+### 7.8 pgvector column is dead code with the wrong dimension
+**Current:** `schema.prisma:40` declares `imageVector Unsupported("vector(2048)")?` and the init migration creates the column with the `vector` extension, but **no code reads or writes it** — all embedding storage and matching live in the Python pickle. The declared width is 2048, while ViT-B/32 actually emits **512**-dimensional vectors (verified by loading `products.pkl`).
+**Limitation:** The schema advertises a capability the application does not use, and even if someone wired it up today it would reject the vectors because the dimension is wrong. The 2048 strongly suggests it was copied from an earlier ResNet-style (2048-d) design and never corrected — it's misleading dead weight in the data model.
+**Production fix:** Either remove the column and the `vector` extension if pgvector won't be used, or — if adopting 7.7's pgvector path — redeclare it as `vector(512)` to match ViT-B/32, backfill it during indexing, and run nearest-neighbor queries in Postgres so the schema and the implementation finally agree.
