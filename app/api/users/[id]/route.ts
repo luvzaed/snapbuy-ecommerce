@@ -63,12 +63,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     // Role changes are admin-only; silently ignored for non-admins.
     if (body.role !== undefined && admin) {
-      data.role = body.role;
+      if (typeof body.role !== 'string' || !['USER', 'ADMIN'].includes(body.role.toUpperCase())) return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+      if (targetId === session.id && body.role.toUpperCase() !== 'ADMIN') return NextResponse.json({ error: 'Cannot remove your own admin role' }, { status: 400 });
+      data.role = body.role.toUpperCase();
     }
 
     // Password change: accept `newPassword` (profile) or `password` (admin reset).
     const newPassword = body.newPassword ?? body.password;
     if (newPassword !== undefined && newPassword !== "") {
+      if (typeof newPassword !== "string" || newPassword.length < 8 || newPassword.length > 128) return NextResponse.json({ error: "Password must be 8-128 characters" }, { status: 400 });
       // A user changing their own password must prove the current one.
       if (!admin) {
         const existing = await prisma.user.findUnique({ where: { id: targetId } });
@@ -109,6 +112,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
   try {
     const { id } = await params;
+    if (session.id === Number(id)) return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     await prisma.user.delete({ where: { id: Number(id) } });
     return NextResponse.json({ success: true });
   } catch {
