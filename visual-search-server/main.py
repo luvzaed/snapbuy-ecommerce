@@ -26,6 +26,8 @@ manual script run or server restart.
 import sys
 import io
 import base64
+import os
+import secrets
 import threading
 
 import torch
@@ -33,7 +35,7 @@ import open_clip
 import numpy as np
 from io import BytesIO
 from PIL import Image
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -141,13 +143,16 @@ def health_check():
 
 
 @app.post("/reindex")
-def reindex():
+def reindex(x_reindex_token: str | None = Header(default=None)):
     """Rebuild the embedding index from the current database state.
 
     Reuses cached embeddings for products whose image hasn't changed, so only
     new/changed images are downloaded and encoded. Deleted products drop out.
     Called automatically by the admin product API on create/edit/delete.
     """
+    required_token = os.getenv("VISUAL_SEARCH_REINDEX_TOKEN")
+    if not required_token or not x_reindex_token or not secrets.compare_digest(required_token, x_reindex_token):
+        raise HTTPException(status_code=403, detail="Unauthorized reindex")
     try:
         # Snapshot the current embeddings so unchanged products can be reused.
         with _index_lock:
@@ -193,8 +198,15 @@ def search_by_image(request: SearchRequest):
         if ',' in image_data:
             image_data = image_data.split(',', 1)[1]
 
-        img_bytes = base64.b64decode(image_data)
-        img = Image.open(BytesIO(img_bytes)).convert("RGB")
+        if len(image_data) > 7_000_000:
+            raise ValueError('Image too large')
+        img_bytes = base64.b64decode(image_data, validate=True)
+        if len(img_bytes) > 5 * 1024 * 1024:
+            raise ValueError('Image too large')
+        img = Image.open(BytesIO(img_bytes))
+        if img.width * img.height > 20_000_000:
+            raise ValueError("Image dimensions too large")
+        img = img.convert("RGB")
 
         # -- Generate embedding for the query image ----------------------------
         img_tensor = preprocess(img).unsqueeze(0).to(device)
@@ -241,4 +253,4 @@ if __name__ == "__main__":
     print(f"    Top-K results: {TOP_K}")
     print(f"    Device: {device}")
     print("    Press Ctrl+C to stop\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=os.getenv("VISUAL_SEARCH_BIND_HOST", "127.0.0.1"), port=8000)
