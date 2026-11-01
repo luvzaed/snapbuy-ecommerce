@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { image } = body;
 
-    if (!image) {
+    if (typeof image !== 'string' || image.length > 7_000_000 || image.length === 0) {
       return NextResponse.json(
         { error: "No image provided" },
         { status: 400 }
@@ -19,10 +19,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Forward image to Python visual search server
-    const pythonResponse = await fetch("http://localhost:8000/search", {
+    const pythonResponse = await fetch(`${process.env.VISUAL_SEARCH_URL || "http://127.0.0.1:8000"}/search`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!pythonResponse.ok) {
