@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import { getSession, isAdmin } from "@/lib/api-auth";
+import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 import { triggerVisualSearchReindex } from "@/lib/reindex";
 
 interface Params {
@@ -51,7 +51,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 // PUT /api/products/[id] — update a product (admin only; accepts multipart file upload OR JSON)
 export async function PUT(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -126,7 +126,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 // DELETE /api/products/[id] — delete a product (admin only)
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

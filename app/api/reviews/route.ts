@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/api-auth";
+import { getAuthenticatedSession } from "@/lib/api-auth";
 
 // GET /api/reviews?productId=X — fetch reviews for a product
 export async function GET(req: NextRequest) {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const { userId, productId, rating, comment } = body;
 
     // Auth check: verify the user is logged in and matches the userId
-    const session = getSession(req);
+    const session = await getAuthenticatedSession(req);
     if (!session) {
       return NextResponse.json({ error: "Login required to post a review" }, { status: 401 });
     }

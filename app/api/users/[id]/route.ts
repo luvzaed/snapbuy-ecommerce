@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, isAdmin } from "@/lib/api-auth";
+import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
 interface Params {
@@ -9,7 +9,7 @@ interface Params {
 
 // GET /api/users/[id] — admin only
 export async function GET(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 // - An admin may update any account, including changing roles.
 // - Passwords are always hashed; a self password change must verify the current one.
 export async function PUT(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -100,7 +100,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 // DELETE /api/users/[id] — admin only
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

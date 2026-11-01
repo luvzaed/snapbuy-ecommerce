@@ -2,12 +2,21 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyPassword, hashPassword, isHashed } from '@/lib/password';
 import { signSession } from '@/lib/api-auth';
+import { isLoginBlocked, recordFailedLogin, clearFailedLogins } from '@/lib/login-rate-limit';
 
 export async function POST(req: Request) {
   try {
     // 1. Parse the incoming request body
     const body = await req.json();
     const { email, password } = body;
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password || email.length > 254 || password.length > 1024) {
+      return NextResponse.json({ message: 'Invalid email or password' }, { status: 400 });
+    }
+    const normalizedEmail = email.trim().toLowerCase();
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (isLoginBlocked(normalizedEmail, clientIp)) {
+      return NextResponse.json({ message: 'Too many login attempts. Try again later.' }, { status: 429, headers: { 'Retry-After': '900' } });
+    }
 
     // 2. Validate input
     if (!email || !password) {
@@ -19,11 +28,12 @@ export async function POST(req: Request) {
 
     // 3. Find the user in the database using Prisma
     const user = await prisma.user.findUnique({
-      where: { email: email },
+      where: { email: normalizedEmail },
     });
 
     // 4. Check if user exists
     if (!user) {
+      recordFailedLogin(normalizedEmail, clientIp);
       return NextResponse.json(
         { message: 'Invalid email or password' },
         { status: 401 },
@@ -34,6 +44,7 @@ export async function POST(req: Request) {
     const isPasswordValid = await verifyPassword(password, user.password);
 
     if (!isPasswordValid) {
+      recordFailedLogin(normalizedEmail, clientIp);
       return NextResponse.json(
         { message: 'Invalid email or password' },
         { status: 401 },
@@ -53,6 +64,8 @@ export async function POST(req: Request) {
       }
     }
 
+    clearFailedLogins(normalizedEmail, clientIp);
+
     // 6. Return success response (Login successful)
     const userData = {
       id: user.id,
@@ -71,7 +84,7 @@ export async function POST(req: Request) {
     // cookie in the browser invalidates the token instead of granting access.
     const token = signSession({ id: user.id, role: userData.role });
     response.cookies.set('auth_session', token, {
-      httpOnly: false, // Needs to be readable for client-side logout clearing
+      httpOnly: true, // Never expose the signed session token to browser JavaScript
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',

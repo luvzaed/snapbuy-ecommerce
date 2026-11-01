@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/api-auth";
+import { getAuthenticatedSession } from "@/lib/api-auth";
 
 // Thrown inside the order transaction for stock/validation failures so the
 // catch block can map it to a 400 with a clear message (vs. a generic 500).
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const fetchAll = req.nextUrl.searchParams.get("all");
 
     // Authenticate the session from the signed cookie
-    const session = getSession(req);
+    const session = await getAuthenticatedSession(req);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
   try {
     // Derive the user from the authenticated session cookie — never trust a
     // userId in the request body (prevents creating orders for other users).
-    const session = getSession(req);
+    const session = await getAuthenticatedSession(req);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -92,14 +92,28 @@ export async function POST(req: NextRequest) {
     const { items, shipping } = body;
 
     // items = [{ productId: number, quantity: number }]
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
       return NextResponse.json(
         { error: "items are required" },
         { status: 400 }
       );
     }
 
+    // Reject invalid quantities, duplicate product IDs and malformed entries
+    // before the transaction. Negative quantities previously increased stock.
+    const valid = items.every((item: unknown) => {
+      if (!item || typeof item !== 'object') return false;
+      const entry = item as { productId?: unknown; quantity?: unknown };
+      return Number.isSafeInteger(entry.productId) && Number(entry.productId) > 0 &&
+        Number.isSafeInteger(entry.quantity) && Number(entry.quantity) > 0 && Number(entry.quantity) <= 100;
+    });
+    if (!valid) {
+      return NextResponse.json({ error: 'Invalid product ID or quantity' }, { status: 400 });
+    }
     const productIds = items.map((item: { productId: number }) => item.productId);
+    if (new Set(productIds).size !== productIds.length) {
+      return NextResponse.json({ error: 'Duplicate products are not allowed' }, { status: 400 });
+    }
 
     // Re-verify stock, compute the total from real DB prices, create the order,
     // and decrement stock — all inside a SINGLE transaction so an order can

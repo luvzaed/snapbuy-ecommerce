@@ -14,7 +14,7 @@ interface AuthContextType {
   orders: Order[];
   cart: CartItem[];
   setAuthUser: (user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
@@ -36,16 +36,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('shop_user');
-      if (storedUser) setUser(JSON.parse(storedUser));
-      const storedCart = localStorage.getItem('shop_cart');
-      if (storedCart) setCart(JSON.parse(storedCart));
-    } catch (error) {
-      console.error('Error parsing data from localStorage:', error);
-    } finally {
-      setLoading(false);
+    let active = true;
+    async function hydrate() {
+      try {
+        const storedCart = localStorage.getItem('shop_cart');
+        if (storedCart && active) setCart(JSON.parse(storedCart));
+      } catch {
+        localStorage.removeItem('shop_cart');
+      }
+      try {
+        // localStorage is untrusted; only the server can confirm a valid cookie.
+        const response = await fetch('/api/users/me', { cache: 'no-store' });
+        if (active && response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+          localStorage.setItem('shop_user', JSON.stringify(data.user));
+        } else if (active) {
+          setUser(null);
+          localStorage.removeItem('shop_user');
+        }
+      } catch {
+        if (active) {
+          setUser(null);
+          localStorage.removeItem('shop_user');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     }
+    void hydrate();
+    return () => { active = false; };
   }, []);
 
   const setAuthUser = (userData: User) => {
@@ -53,8 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('shop_user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const response = await fetch('/api/users/logout', { method: 'POST' });
+    if (!response.ok) throw new Error('Could not log out');
     setUser(null);
+    setOrders([]);
     setCart([]);
     localStorage.removeItem('shop_user');
     localStorage.removeItem('shop_cart');

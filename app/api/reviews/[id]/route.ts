@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, isAdmin } from "@/lib/api-auth";
+import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -11,7 +11,7 @@ interface Params {
 // After deletion the product's denormalised rating / reviewCount is
 // recalculated so product cards immediately reflect the new average.
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Giriş yapmanız gerekiyor." }, { status: 401 });
   }

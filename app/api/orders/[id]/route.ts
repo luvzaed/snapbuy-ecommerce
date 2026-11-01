@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/api-auth";
+import { getAuthenticatedSession } from "@/lib/api-auth";
 
 // PATCH /api/orders/[id] — update order status (admin only)
 export async function PATCH(
@@ -11,7 +11,7 @@ export async function PATCH(
     const { id } = await params;
 
     // Authenticate the session from the signed cookie
-    const session = getSession(req);
+    const session = await getAuthenticatedSession(req);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -60,7 +60,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -90,7 +90,7 @@ export async function GET(
     const { id } = await params;
 
     // Authenticate the session from the signed cookie
-    const session = getSession(req);
+    const session = await getAuthenticatedSession(req);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

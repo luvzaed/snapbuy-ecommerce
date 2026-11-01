@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { getSession, isAdmin } from "@/lib/api-auth";
+import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 import { triggerVisualSearchReindex } from "@/lib/reindex";
 
 // Save an uploaded image File to /public/images/products and return its public path
@@ -30,7 +30,7 @@ export async function GET() {
 
 // POST /api/products — create a new product (admin only; accepts multipart file upload OR JSON)
 export async function POST(req: NextRequest) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
