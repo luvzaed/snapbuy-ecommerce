@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -18,7 +18,6 @@ const ITEMS_PER_PAGE = 12;
 function ShopContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(['Tümü']);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +28,10 @@ function ShopContent() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const filterKey = JSON.stringify([searchQuery, selectedCategory, minPrice, maxPrice, sortBy]);
+  const [pageSelection, setPageSelection] = useState({ key: '', page: 1 });
+  const currentPage = pageSelection.key === filterKey ? pageSelection.page : 1;
+  const setCurrentPage = (page: number) => setPageSelection({ key: filterKey, page });
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -37,7 +39,6 @@ function ShopContent() {
         const res = await fetch('/api/products');
         const data = await res.json();
         setProducts(data);
-        setFilteredProducts(data);
 
         const uniqueCategories = Array.from(
           new Set(data.map((p: Product) => p.category)),
@@ -53,7 +54,7 @@ function ShopContent() {
     fetchProducts();
   }, []);
 
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     let result = [...products];
 
     if (selectedCategory !== 'Tümü') {
@@ -78,8 +79,7 @@ function ShopContent() {
     else if (sortBy === 'price-desc') result.sort((a, b) => b.price - a.price);
     else if (sortBy === 'newest') result.sort((a, b) => b.id - a.id);
 
-    setFilteredProducts(result);
-    setCurrentPage(1);
+    return result;
   }, [searchQuery, selectedCategory, products, minPrice, maxPrice, sortBy]);
 
   // ── Pagination ───────────────────────────────────────────────

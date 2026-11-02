@@ -35,7 +35,6 @@ export default function AdminProductsPage() {
   const [productSearch, setProductSearch] = useState('');
 
   const fetchProducts = async () => {
-    setIsLoading(true);
     try {
       const res = await fetch('/api/products');
       const data = await res.json();

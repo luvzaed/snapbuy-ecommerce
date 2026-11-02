@@ -51,8 +51,7 @@ export default function AdminUsersPage() {
     }
   }, [user]);
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
+  async function fetchUsers() {
     try {
       const res = await fetch('/api/users');
       if (res.ok) {
@@ -65,7 +64,7 @@ export default function AdminUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   const updateUserRole = async (userId: number, newRole: string) => {
     setUpdatingId(userId);

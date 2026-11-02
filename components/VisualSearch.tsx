@@ -69,10 +69,6 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
     return () => stopCamera();
   }, [stopCamera]);
 
-  useEffect(() => {
-    if (tab !== "camera") stopCamera();
-  }, [tab, stopCamera]);
-
   /* ── start camera ── */
   const startCamera = async () => {
     setCameraError(null);
@@ -200,7 +196,7 @@ export default function VisualSearch({ onClose }: VisualSearchProps) {
               {(["upload", "camera"] as Tab[]).map((t) => (
                 <button
                   key={t}
-                  onClick={() => { setTab(t); reset(); }}
+                  onClick={() => { stopCamera(); setTab(t); reset(); }}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     tab === t
                       ? "gradient-brand text-white shadow-lg shadow-cyan-500/20"

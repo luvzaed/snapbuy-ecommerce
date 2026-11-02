@@ -114,7 +114,6 @@ export default function AdminOrdersPage() {
   }, [authLoading, user, router]);
 
   const fetchAllOrders = async () => {
-    setIsLoading(true);
     try {
       const res = await fetch('/api/orders?all=true');
       if (res.ok) {
