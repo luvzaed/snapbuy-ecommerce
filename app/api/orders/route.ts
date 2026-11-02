@@ -90,6 +90,17 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { items, shipping } = body;
+    let safeShipping: Record<string, string> | undefined;
+    if (shipping !== undefined && shipping !== null) {
+      if (typeof shipping !== 'object' || Array.isArray(shipping)) return NextResponse.json({ error: 'Invalid shipping details' }, { status: 400 });
+      safeShipping = {};
+      for (const key of ['fullName', 'phone', 'address', 'city', 'state', 'zip', 'country']) {
+        if (shipping[key] !== undefined) {
+          if (typeof shipping[key] !== 'string' || shipping[key].length > 500) return NextResponse.json({ error: 'Invalid shipping details' }, { status: 400 });
+          safeShipping[key] = shipping[key];
+        }
+      }
+    }
 
     // items = [{ productId: number, quantity: number }]
     if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
@@ -160,7 +171,7 @@ export async function POST(req: NextRequest) {
           total: Math.round(total * 100) / 100,
           status: "PENDING",
           // Persist the shipping + contact info collected at checkout (no card data)
-          shipping: shipping ?? undefined,
+          shipping: safeShipping,
           items: {
             create: items.map(
               (item: { productId: number; quantity: number }) => {

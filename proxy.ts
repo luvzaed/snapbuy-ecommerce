@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { rejectCrossSiteMutation } from './lib/request-security';
 
 /**
  * Edge proxy (Next.js 16 replacement for middleware) for route-level protection.
@@ -83,6 +84,9 @@ async function verifySessionToken(
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname.startsWith('/api/') && rejectCrossSiteMutation(request)) {
+    return NextResponse.json({ error: 'Cross-site request rejected' }, { status: 403 });
+  }
 
   // ── Admin route protection ──────────────────────────────────────────────
   if (pathname.startsWith('/admin')) {
@@ -111,5 +115,5 @@ export async function proxy(request: NextRequest) {
 
 // Only run on these routes
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/:path*'],
 };

@@ -47,3 +47,12 @@ next-env.d.ts
 **/.venv/
 __pycache__/
 *.pyc
+
+# Local PostgreSQL files, passwords, logs and backups
+/.local/
+
+# Generated catalog indexes and database exports must stay on this computer
+/visual-search-server/embeddings/
+*.dump
+*.backup
+snapbuy-export*.csv

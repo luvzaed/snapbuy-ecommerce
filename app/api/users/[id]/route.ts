@@ -52,13 +52,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const data: Record<string, unknown> = {};
 
-    if (body.name !== undefined) data.name = body.name;
+    if (body.name !== undefined) {
+      if (typeof body.name !== 'string' || body.name.length > 120) return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
+      data.name = body.name;
+    }
     if (body.email !== undefined) {
       const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-      if (!EMAIL_RE.test(body.email)) {
+      if (typeof body.email !== 'string' || body.email.length > 254 || !EMAIL_RE.test(body.email.trim())) {
         return NextResponse.json({ error: "Geçersiz e-posta adresi" }, { status: 400 });
       }
-      data.email = body.email;
+      data.email = body.email.trim().toLowerCase();
     }
 
     // Role changes are admin-only; silently ignored for non-admins.
@@ -71,7 +74,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     // Password change: accept `newPassword` (profile) or `password` (admin reset).
     const newPassword = body.newPassword ?? body.password;
     if (newPassword !== undefined && newPassword !== "") {
-      if (typeof newPassword !== "string" || newPassword.length < 8 || newPassword.length > 128) return NextResponse.json({ error: "Password must be 8-128 characters" }, { status: 400 });
+      if (typeof newPassword !== "string" || newPassword.length < 8 || Buffer.byteLength(newPassword, 'utf8') > 72) return NextResponse.json({ error: "Password must be at least 8 characters and at most 72 UTF-8 bytes" }, { status: 400 });
       // A user changing their own password must prove the current one.
       if (!admin) {
         const existing = await prisma.user.findUnique({ where: { id: targetId } });

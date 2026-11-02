@@ -29,6 +29,7 @@ function record(key: string): void {
     for (const [k, v] of failures) {
       if (v.expiresAt <= now) failures.delete(k);
     }
+    while (failures.size > 20000) failures.delete(failures.keys().next().value!);
   }
 }
 
@@ -41,6 +42,6 @@ export function recordFailedLogin(email: string, ip: string): void {
   record('ip:' + ip);
 }
 
-export function clearFailedLogins(email: string, _ip: string): void {
+export function clearFailedLogins(email: string): void {
   failures.delete('email:' + email);
 }

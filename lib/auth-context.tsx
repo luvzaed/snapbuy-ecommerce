@@ -20,7 +20,7 @@ interface AuthContextType {
   updateQuantity: (productId: number, quantity: number) => void;
   cartCount: number;
   fetchOrders: () => Promise<void>;
-  placeOrder: (shipping?: Record<string, unknown>, payment?: Record<string, unknown>, total?: number) => Promise<string | false>;
+  placeOrder: (shipping?: Record<string, unknown>, total?: number) => Promise<string | false>;
   isCheckingOut: boolean;
 }
 
@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const placeOrder = async (shipping?: Record<string, unknown>, payment?: Record<string, unknown>, total?: number) => {
+  const placeOrder = async (shipping?: Record<string, unknown>, total?: number) => {
     setIsCheckingOut(true);
     try {
       const res = await fetch('/api/orders', {
@@ -160,7 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           items: cart.map(item => ({ productId: item.product.id, quantity: item.quantity, price: item.product.price })),
           total,
           shipping,
-          payment
         })
       });
       if (res.ok) {

@@ -1,0 +1,31 @@
+name: Refresh security dependency lock
+on:
+  push:
+    branches: [security/harden-auth-checkout-visual-search]
+    paths: [package.json, .github/workflows/refresh-security-lock.yml]
+permissions:
+  contents: read
+jobs:
+  lock:
+    if: github.repository == 'luvzaed/snapbuy-ecommerce'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: security/harden-auth-checkout-visual-search
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: npm install --package-lock-only --ignore-scripts
+      - name: Commit only the generated dependency lock on the security branch
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -- package-lock.json
+            git commit -m "Refresh lockfile for patched security dependencies"
+            git push origin HEAD:security/harden-auth-checkout-visual-search
+          fi

@@ -1,0 +1,51 @@
+name: Security and local PostgreSQL checks
+on:
+  pull_request:
+  push:
+    branches: [main, security/harden-auth-checkout-visual-search]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18-trixie
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: snapbuy_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d snapbuy_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres:ci-only-password@127.0.0.1:5432/snapbuy_ci?schema=public
+      JWT_SECRET: ci-only-signing-secret-not-used-for-any-real-account
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: node node_modules/prisma/build/index.js generate
+      - run: node node_modules/prisma/build/index.js migrate deploy
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Verify login, authorization, privacy and checkout against PostgreSQL
+        run: |
+          node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000 > /tmp/snapbuy-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:3000/api/products > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/verify-local.mjs --ci

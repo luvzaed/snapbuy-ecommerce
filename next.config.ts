@@ -1,13 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: '/:path*', headers: [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+    ] }];
+  },
   images: {
-    // Product images can come from any URL an admin enters, so allow any host
-    // (prevents next/image from throwing "hostname not configured" and crashing).
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-      { protocol: "http", hostname: "**" },
-    ],
+    dangerouslyAllowLocalIP: false,
+    maximumRedirects: 0,
+    remotePatterns: (process.env.ALLOWED_IMAGE_HOSTS || 'images.unsplash.com,images.pexels.com,cdn.dsmcdn.com')
+      .split(',').map(hostname => ({ protocol: 'https' as const, hostname: hostname.trim() })),
   },
 };
 

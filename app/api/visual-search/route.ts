@@ -27,9 +27,8 @@ export async function POST(req: NextRequest) {
     });
 
     if (!pythonResponse.ok) {
-      const errorData = await pythonResponse.json().catch(() => ({}));
       return NextResponse.json(
-        { error: errorData.detail || "Visual search server error" },
+        { error: "Visual search is temporarily unavailable" },
         { status: pythonResponse.status }
       );
     }
@@ -72,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Visual search server is not running. Start it with: cd visual-search-server && python main.py",
+            "Visual search is temporarily unavailable",
         },
         { status: 503 }
       );

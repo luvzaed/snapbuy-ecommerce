@@ -1,26 +1,30 @@
-# SnapBuy Security Notes
+# Snapbuy security
 
-## Environment variables
-- `JWT_SECRET`: long cryptographically random signing secret (32+ random bytes recommended).
-- `DATABASE_URL`: PostgreSQL URL (never commit the secret).
-- `VISUAL_SEARCH_URL`: internal Python service URL (default `http://127.0.0.1:8000`).
-- `VISUAL_SEARCH_REINDEX_TOKEN`: a long random token, **identical in the Next.js and Python process environments**. The Python `/reindex` endpoint refuses requests unless this is set and supplied in `X-Reindex-Token`.
-- `VISUAL_SEARCH_BIND_HOST`: default `127.0.0.1`; change only when running in a secured private network.
+## Controls and scope
 
-## Implemented in the security PR
-- Signed cookies are HttpOnly and cleared on logout.
-- UI revalidates signed sessions using `GET /api/users/me`.
-- Authenticated API routes recheck user identity and current database role.
-- Basic **single-process** failed-login throttling.
-- Order quantities and duplicate item IDs are validated on the server.
-- Python visual search limits incoming image size and pixel count, protects reindex, and binds to loopback by default.
+The default is a local Windows demonstration. PostgreSQL uses SCRAM passwords on `127.0.0.1:55432`; npm servers bind to `127.0.0.1`. An offline database does not by itself make a website safe to publish online.
 
-## Deployment caveats
-- Rotate `JWT_SECRET` when deploying this change if previous session tokens might have been exposed. Cookie clearing does not revoke a previously stolen JWT.
-- The in-memory login throttle is insufficient for distributed/serverless production: use a shared Redis limiter or WAF.
-- Python and Next.js need to run in a shared private network if hosted on separate machines. Neither public `/reindex` nor public database access should be exposed.
-- Uploaded product images currently lack robust server-side validation. Use content sniffing, size limits, and object storage before public deployment.
-- Existing product review responses expose reviewer emails; remove them for privacy.
-- Index file `.pkl` uses Python pickle: never load an index from an untrusted source.
-- Add CSRF/origin checks for cookie-based API mutations; configure a CSP and run `npm audit` and `pip-audit`.
-- This PR has not passed a full production build or integration tests with a database. Keep it in draft until tested.
+- Signed HS256, HttpOnly, SameSite session cookies. Production cookies are Secure; logout clears the browser cookie. User state is confirmed with the server.
+- Protected APIs recheck account existence and current database role. Private account/order access is limited to owners and administrators. Public reviews omit emails; responses never select password hashes.
+- Cross-site browser mutations are rejected. Security headers disable content sniffing and framing.
+- Passwords use bcrypt; plaintext database passwords cannot log in. Registration/reset validate length and login failures use bounded, per-process throttling.
+- Checkout validates quantities, duplicates and stock; prices come from PostgreSQL and stock updates are transactional. Only known shipping/contact fields can be saved. Card details are not collected or sent.
+- Images are limited to 5 MB/20 million pixels, decoded and re-encoded as JPEG with random names. SVG/fake images are rejected. Approved HTTPS hosts and constrained local paths prevent arbitrary file references/deletion.
+- Visual search uses loopback, image limits, a reindex token, constrained image paths/hosts and JSON indexes instead of executable pickle.
+- Credentials, databases, logs, indexes, exports and backups are ignored by Git. Never force-add them. Import checks verify exports and copied values before committing local records.
+
+## Secrets and private data
+
+`JWT_SECRET`, `DATABASE_URL` and `VISUAL_SEARCH_REINDEX_TOKEN` are generated locally or supplied through the environment. Never put real values in source, issues, screenshots, logs or pull requests. CI credentials are test-only. Uploaded product images are public assets; do not upload private documents there.
+
+A scan of tracked files and reachable history found no matching configured signing secrets, database passwords or customer password hashes. A former public contact email remains in an older footer revision. Git history is retained, so merging does not remove that historical address. This is bounded scan evidence, not a guarantee against every possible secret pattern.
+
+## Remaining limitations
+
+- A previously stolen JWT remains usable until its seven-day expiry. Logout clears the browser cookie, and password changes do not revoke old tokens. Rotate the signing secret after suspected compromise. Public hosting should add server-side revocation.
+- Throttling is per process; distributed hosting needs a shared limiter/WAF and trusted proxy configuration.
+- This demo has no payment gateway, email verification, password recovery or independent penetration-test certification.
+- Remote images and initial CLIP downloads need internet. The optional Python model-based service requires its own runtime verification.
+- Local backups contain personal records and password hashes. Keep them private and make consistent PostgreSQL backups. Do not delete the database directory to troubleshoot.
+
+Before any public deployment, review dependency audits, HTTPS, CSP, CSRF, rate limits, revocation, backups, database privileges and the Python service for that environment.

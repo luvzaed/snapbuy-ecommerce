@@ -38,7 +38,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, email, password } = body; // `role` intentionally ignored here
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || email.length > 254 || typeof password !== 'string' ||
+        password.length < 8 || Buffer.byteLength(password, 'utf8') > 72 ||
+        (name !== undefined && (typeof name !== 'string' || name.length > 120))) {
       return NextResponse.json({ error: "email and password are required" }, { status: 400 });
     }
 
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name: name ?? null,
-        email,
+        email: email.trim().toLowerCase(),
         password: await hashPassword(password),
         role: "USER", // public registration can never create an admin
       },

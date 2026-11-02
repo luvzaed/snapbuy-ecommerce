@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
@@ -29,38 +29,6 @@ const STEPS = [
   { id: 2, label: 'Ödeme', icon: CreditCard },
   { id: 3, label: 'İnceleme', icon: ClipboardCheck },
 ];
-
-// Format card number with spaces
-function formatCardNumber(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 16);
-  return digits.replace(/(\d{4})(?=\d)/g, '$1 ');
-}
-
-// Format expiry as MM/YY with validation (month 01-12)
-function formatExpiry(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 4);
-  if (digits.length === 0) return '';
-
-  // Validate month (01-12)
-  let month = digits.slice(0, 2);
-  if (digits.length === 1) {
-    // If first digit is 2-9, auto-prefix with 0 (e.g. "3" → "03")
-    if (parseInt(digits[0]) > 1) {
-      month = '0' + digits[0];
-      const year = digits.slice(1, 3);
-      return year ? `${month}/${year}` : month;
-    }
-    return digits;
-  }
-
-  // Clamp month to 01-12
-  const monthNum = parseInt(month);
-  if (monthNum === 0) month = '01';
-  else if (monthNum > 12) month = '12';
-
-  if (digits.length >= 3) return `${month}/${digits.slice(2)}`;
-  return month;
-}
 
 // --- Reusable input field (defined OUTSIDE the page component to avoid focus loss) ---
 function InputField({
@@ -136,14 +104,6 @@ export default function CheckoutPage() {
     state: '',
     zip: '',
     country: 'Türkiye',
-  });
-
-  // Payment form
-  const [payment, setPayment] = useState({
-    cardName: '',
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
   });
 
   // Validation errors
@@ -265,23 +225,8 @@ export default function CheckoutPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const validatePayment = () => {
-    const errs: Record<string, string> = {};
-    if (!payment.cardName.trim())
-      errs.cardName = 'Kart üzerindeki isim gerekli';
-    const digits = payment.cardNumber.replace(/\s/g, '');
-    if (digits.length < 16)
-      errs.cardNumber = 'Geçerli 16 haneli kart numarası girin';
-    if (payment.expiry.length < 5)
-      errs.expiry = 'Geçerli son kullanma tarihi girin (AA/YY)';
-    if (payment.cvv.length < 3) errs.cvv = 'Geçerli CVV girin';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
   const handleNext = () => {
     if (currentStep === 1 && !validateShipping()) return;
-    if (currentStep === 2 && !validatePayment()) return;
     // If the user came from Review to edit this step, send them straight back
     // to Review (step 3). Otherwise advance one step as usual.
     const nextStep = returnToReview ? 3 : Math.min(currentStep + 1, 3);
@@ -301,7 +246,7 @@ export default function CheckoutPage() {
     orderPlacedRef.current = true;
     // Place the order here at the final review step, sending the collected
     // shipping + contact info (card data is intentionally not persisted).
-    const success = await placeOrder(shipping, undefined, total);
+    const success = await placeOrder(shipping, total);
     if (success) {
       toast.success('Siparişiniz başarıyla oluşturuldu!');
       router.push('/order-confirmation');
@@ -476,79 +421,11 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* Step 2: Payment */}
+          {/* Step 2: Local demonstration, without collecting card data */}
           {currentStep === 2 && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-sm animate-fade-in-up">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-3">
-                <CreditCard className="w-6 h-6 text-indigo-500" />
-                Ödeme Bilgileri
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
-                Kart bilgilerinizi girin (demo — gerçek ödeme alınmaz)
-              </p>
-
-              <div className="space-y-5">
-                <InputField
-                  label="Kart Üzerindeki İsim"
-                  name="cardName"
-                  value={payment.cardName}
-                  onChange={(e) =>
-                    setPayment({ ...payment, cardName: e.target.value })
-                  }
-                  placeholder="Adınızı ve soyadınızı girin"
-                  icon={User}
-                  error={errors.cardName}
-                />
-
-                <InputField
-                  label="Kart Numarası"
-                  name="cardNumber"
-                  value={payment.cardNumber}
-                  onChange={(e) =>
-                    setPayment({
-                      ...payment,
-                      cardNumber: formatCardNumber(e.target.value),
-                    })
-                  }
-                  placeholder=""
-                  icon={CreditCard}
-                  maxLength={19}
-                  error={errors.cardNumber}
-                />
-
-                <div className="grid grid-cols-2 gap-5">
-                  <InputField
-                    label="Son Kullanma Tarihi"
-                    name="expiry"
-                    value={payment.expiry}
-                    onChange={(e) =>
-                      setPayment({
-                        ...payment,
-                        expiry: formatExpiry(e.target.value),
-                      })
-                    }
-                    placeholder="MM/YY"
-                    icon={CreditCard}
-                    maxLength={5}
-                    error={errors.expiry}
-                  />
-                  <InputField
-                    label="CVV"
-                    name="cvv"
-                    value={payment.cvv}
-                    onChange={(e) =>
-                      setPayment({
-                        ...payment,
-                        cvv: e.target.value.replace(/\D/g, '').slice(0, 4),
-                      })
-                    }
-                    placeholder="123"
-                    icon={Lock}
-                    maxLength={4}
-                    error={errors.cvv}
-                  />
-                </div>
-              </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8">
+              <h2 className="text-2xl font-bold mb-4">Demo sipariş</h2>
+              <p>Bu yerel demo ödeme almaz. Kart bilgisi girmeniz gerekmez. Devam ederek siparişinizi inceleyebilirsiniz.</p>
             </div>
           )}
 
@@ -621,15 +498,7 @@ export default function CheckoutPage() {
                   </button>
                 </div>
                 <div className="text-slate-600 dark:text-slate-300 text-sm space-y-0.5">
-                  <p className="font-medium">{payment.cardName}</p>
-                  <p>
-                    •••• •••• ••••{' '}
-                    {payment.cardNumber.replace(/\s/g, '').slice(-4)}
-                  </p>
-                  <p className="text-slate-500 dark:text-slate-400">
-                    Son kullanma: {payment.expiry}
-                  </p>
-                </div>
+                                      <p>Demo sipariş — ödeme alınmaz, kart bilgisi gerekmez.</p></div>
               </div>
 
               {/* Items summary */}

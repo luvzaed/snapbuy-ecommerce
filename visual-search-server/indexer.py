@@ -16,7 +16,9 @@ the `image` column:
 """
 
 import os
-import pickle
+import json
+import tempfile
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 import requests
 import numpy as np
@@ -33,7 +35,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 # public/images/products/. A relative image path like "/images/products/x.jpg"
 # is resolved against this directory.
 PUBLIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'public'))
-EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), 'embeddings', 'products.pkl')
+EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), 'embeddings', 'products.json')
 
 
 def load_image(image_ref: str) -> Image.Image:
@@ -46,16 +48,33 @@ def load_image(image_ref: str) -> Image.Image:
     if not image_ref:
         raise ValueError("empty image reference")
 
-    if image_ref.startswith("http://") or image_ref.startswith("https://"):
-        # Remote image (e.g. seeded Unsplash URLs)
-        response = requests.get(image_ref, timeout=15)
-        response.raise_for_status()
-        return Image.open(BytesIO(response.content)).convert("RGB")
+    if image_ref.startswith(("http://", "https://")):
+        url = urlsplit(image_ref)
+        allowed = {host.strip().lower() for host in os.getenv('ALLOWED_IMAGE_HOSTS', 'images.unsplash.com,images.pexels.com,cdn.dsmcdn.com').split(',')}
+        if url.scheme != 'https' or url.hostname not in allowed or url.username or url.password or url.port not in (None, 443):
+            raise ValueError('image host is not approved')
+        with requests.get(image_ref, timeout=15, stream=True, allow_redirects=False) as response:
+            if response.status_code != 200:
+                raise ValueError('image download failed')
+            chunks, size = [], 0
+            for chunk in response.iter_content(65536):
+                size += len(chunk)
+                if size > 5 * 1024 * 1024:
+                    raise ValueError('image exceeds 5 MB')
+                chunks.append(chunk)
+        image = Image.open(BytesIO(b''.join(chunks)))
+        if image.width * image.height > 20_000_000:
+            raise ValueError('image dimensions exceed limit')
+        return image.convert('RGB')
 
     # Relative path written by the admin upload API, e.g. "/images/products/x.jpg".
     # Strip any leading slash and resolve against the Next.js public/ directory.
+    if not image_ref.startswith('/images/products/'):
+        raise ValueError('invalid local image path')
     relative = image_ref.lstrip("/\\")
-    local_path = os.path.join(PUBLIC_DIR, *relative.split("/"))
+    local_path = os.path.realpath(os.path.join(PUBLIC_DIR, *relative.split("/")))
+    if os.path.commonpath([PUBLIC_DIR, local_path]) != PUBLIC_DIR:
+        raise ValueError('image path escapes public directory')
     if not os.path.exists(local_path):
         raise FileNotFoundError(f"local image not found: {local_path}")
     return Image.open(local_path).convert("RGB")
@@ -81,7 +100,10 @@ def fetch_products_from_db():
     if not database_url:
         raise RuntimeError("DATABASE_URL not found in environment / .env")
 
-    conn = psycopg2.connect(database_url)
+    # Prisma's schema query parameter is not a valid libpq/psycopg2 option.
+    parsed = urlsplit(database_url)
+    query = urlencode([(key, value) for key, value in parse_qsl(parsed.query) if key != 'schema'])
+    conn = psycopg2.connect(urlunsplit(parsed._replace(query=query)), connect_timeout=5)
     try:
         cur = conn.cursor()
         cur.execute('SELECT id, name, image, category FROM "Product" ORDER BY id')
@@ -161,15 +183,28 @@ def build_index(model, preprocess, device, existing: dict | None = None):
 
 
 def save_index(embeddings: dict, path: str = EMBEDDINGS_PATH) -> None:
-    """Persist the embeddings dict to disk (pickle)."""
+    """Persist plain data only; never serialize executable Python objects."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "wb") as f:
-        pickle.dump(embeddings, f)
+    payload = {str(pid): {**data, 'embedding': np.asarray(data['embedding']).tolist()} for pid, data in embeddings.items()}
+    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=os.path.dirname(path), delete=False) as handle:
+        temporary = handle.name
+        json.dump(payload, handle, allow_nan=False)
+    os.replace(temporary, path)
 
 
 def load_index(path: str = EMBEDDINGS_PATH) -> dict:
     """Load a previously-saved embeddings dict, or {} if none exists."""
     if not os.path.exists(path):
         return {}
-    with open(path, "rb") as f:
-        return pickle.load(f)
+    if os.path.getsize(path) > 32 * 1024 * 1024:
+        raise ValueError('index file is too large')
+    with open(path, encoding='utf-8') as f:
+        payload = json.load(f)
+    result = {}
+    for key, data in payload.items():
+        pid = int(key)
+        vector = np.asarray(data['embedding'], dtype=np.float32)
+        if pid <= 0 or vector.shape != (512,) or not np.isfinite(vector).all():
+            raise ValueError('invalid index data')
+        result[pid] = {**data, 'embedding': vector}
+    return result

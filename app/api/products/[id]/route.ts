@@ -1,38 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir, unlink } from "fs/promises";
-import path from "path";
+import { ImageValidationError, deleteLocalImage, saveUploadedImage, validateImageReference } from '@/lib/product-images';
 import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 import { triggerVisualSearchReindex } from "@/lib/reindex";
 
 interface Params {
   params: Promise<{ id: string }>;
-}
-
-/**
- * Delete a locally-uploaded product image from disk (best-effort).
- * Skips external URLs silently. Logs but never throws on FS errors so the
- * caller can always proceed with the database operation regardless.
- */
-async function deleteLocalImage(imagePath: string): Promise<void> {
-  if (!imagePath || !imagePath.startsWith("/images/products/")) return;
-  const fullPath = path.join(process.cwd(), "public", imagePath);
-  try {
-    await unlink(fullPath);
-  } catch (err) {
-    console.warn(`Could not delete image file "${fullPath}":`, err);
-  }
-}
-
-// Save an uploaded image File to /public/images/products and return its public path
-async function saveUploadedImage(file: File): Promise<string> {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const dir = path.join(process.cwd(), "public", "images", "products");
-  await mkdir(dir, { recursive: true });
-  const safe = (file.name || "image").replace(/[^a-zA-Z0-9.\-_]/g, "_");
-  const filename = `${Date.now()}-${safe}`;
-  await writeFile(path.join(dir, filename), buffer);
-  return `/images/products/${filename}`;
 }
 
 // GET /api/products/[id] — fetch a single product
@@ -100,6 +73,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
       if (body.stock !== undefined) data.stock = Number(body.stock);
     }
 
+    if (data.image !== undefined) data.image = validateImageReference(data.image);
+    if ((data.price !== undefined && (!Number.isFinite(data.price) || Number(data.price) < 0)) ||
+        (data.stock !== undefined && (!Number.isSafeInteger(data.stock) || Number(data.stock) < 0))) {
+      return NextResponse.json({ error: 'Invalid price or stock' }, { status: 400 });
+    }
     const updated = await prisma.product.update({
       where: { id: Number(id) },
       data,
@@ -119,6 +97,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     return NextResponse.json(updated);
   } catch (error) {
+    if (error instanceof ImageValidationError) return NextResponse.json({ error: error.message }, { status: 400 });
     console.error(error);
     return NextResponse.json({ error: "Not found or update failed" }, { status: 404 });
   }

@@ -1,20 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { ImageValidationError, saveUploadedImage, validateImageReference } from '@/lib/product-images';
 import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 import { triggerVisualSearchReindex } from "@/lib/reindex";
-
-// Save an uploaded image File to /public/images/products and return its public path
-async function saveUploadedImage(file: File): Promise<string> {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const dir = path.join(process.cwd(), "public", "images", "products");
-  await mkdir(dir, { recursive: true });
-  const safe = (file.name || "image").replace(/[^a-zA-Z0-9.\-_]/g, "_");
-  const filename = `${Date.now()}-${safe}`;
-  await writeFile(path.join(dir, filename), buffer);
-  return `/images/products/${filename}`;
-}
 
 // GET /api/products — fetch all products
 export async function GET() {
@@ -75,6 +63,10 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    image = validateImageReference(image);
+    if (!Number.isFinite(Number(price)) || Number(price) < 0 || !Number.isSafeInteger(Number(stock || 0)) || Number(stock || 0) < 0) {
+      return NextResponse.json({ error: 'Invalid price or stock' }, { status: 400 });
+    }
 
     const product = await prisma.product.create({
       data: {
@@ -92,6 +84,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
+    if (error instanceof ImageValidationError) return NextResponse.json({ error: error.message }, { status: 400 });
     console.error(error);
     return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
   }
