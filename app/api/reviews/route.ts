@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/api-auth";
+import { getAuthenticatedSession } from "@/lib/api-auth";
 
 // GET /api/reviews?productId=X — fetch reviews for a product
 export async function GET(req: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       where: { productId: Number(productId) },
       include: {
         user: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const { userId, productId, rating, comment } = body;
 
     // Auth check: verify the user is logged in and matches the userId
-    const session = getSession(req);
+    const session = await getAuthenticatedSession(req);
     if (!session) {
       return NextResponse.json({ error: "Login required to post a review" }, { status: 401 });
     }
@@ -47,13 +47,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "userId, productId, and rating are required" }, { status: 400 });
     }
 
-    if (rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
     }
 
     // Comment is required and must not be empty
     const trimmedComment = typeof comment === "string" ? comment.trim() : "";
-    if (!trimmedComment) {
+    if (!trimmedComment || trimmedComment.length > 2000) {
       return NextResponse.json({ error: "Comment is required" }, { status: 400 });
     }
 
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       },
       include: {
         user: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true },
         },
       },
     });

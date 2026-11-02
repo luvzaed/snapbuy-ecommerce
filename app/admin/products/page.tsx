@@ -35,7 +35,6 @@ export default function AdminProductsPage() {
   const [productSearch, setProductSearch] = useState('');
 
   const fetchProducts = async () => {
-    setIsLoading(true);
     try {
       const res = await fetch('/api/products');
       const data = await res.json();
@@ -48,7 +47,13 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    const controller = new AbortController();
+    fetch('/api/products', { signal: controller.signal })
+      .then(response => { if (!response.ok) throw new Error('Product request failed'); return response.json(); })
+      .then(data => { if (!controller.signal.aborted) setProducts(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!controller.signal.aborted) setStatus('Ürünler yüklenemedi.'); })
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {

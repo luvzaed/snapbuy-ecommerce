@@ -14,13 +14,13 @@ interface AuthContextType {
   orders: Order[];
   cart: CartItem[];
   setAuthUser: (user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   cartCount: number;
   fetchOrders: () => Promise<void>;
-  placeOrder: (shipping?: Record<string, unknown>, payment?: Record<string, unknown>, total?: number) => Promise<string | false>;
+  placeOrder: (shipping?: Record<string, unknown>, total?: number) => Promise<string | false>;
   isCheckingOut: boolean;
 }
 
@@ -36,16 +36,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('shop_user');
-      if (storedUser) setUser(JSON.parse(storedUser));
-      const storedCart = localStorage.getItem('shop_cart');
-      if (storedCart) setCart(JSON.parse(storedCart));
-    } catch (error) {
-      console.error('Error parsing data from localStorage:', error);
-    } finally {
-      setLoading(false);
+    let active = true;
+    async function hydrate() {
+      try {
+        const storedCart = localStorage.getItem('shop_cart');
+        if (storedCart && active) setCart(JSON.parse(storedCart));
+      } catch {
+        localStorage.removeItem('shop_cart');
+      }
+      try {
+        // localStorage is untrusted; only the server can confirm a valid cookie.
+        const response = await fetch('/api/users/me', { cache: 'no-store' });
+        if (active && response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+          localStorage.setItem('shop_user', JSON.stringify(data.user));
+        } else if (active) {
+          setUser(null);
+          localStorage.removeItem('shop_user');
+        }
+      } catch {
+        if (active) {
+          setUser(null);
+          localStorage.removeItem('shop_user');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     }
+    void hydrate();
+    return () => { active = false; };
   }, []);
 
   const setAuthUser = (userData: User) => {
@@ -53,8 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('shop_user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const response = await fetch('/api/users/logout', { method: 'POST' });
+    if (!response.ok) throw new Error('Could not log out');
     setUser(null);
+    setOrders([]);
     setCart([]);
     localStorage.removeItem('shop_user');
     localStorage.removeItem('shop_cart');
@@ -126,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const placeOrder = async (shipping?: Record<string, unknown>, payment?: Record<string, unknown>, total?: number) => {
+  const placeOrder = async (shipping?: Record<string, unknown>, total?: number) => {
     setIsCheckingOut(true);
     try {
       const res = await fetch('/api/orders', {
@@ -137,7 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           items: cart.map(item => ({ productId: item.product.id, quantity: item.quantity, price: item.product.price })),
           total,
           shipping,
-          payment
         })
       });
       if (res.ok) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, isAdmin } from "@/lib/api-auth";
+import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
 interface Params {
@@ -9,7 +9,7 @@ interface Params {
 
 // GET /api/users/[id] — admin only
 export async function GET(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 // - An admin may update any account, including changing roles.
 // - Passwords are always hashed; a self password change must verify the current one.
 export async function PUT(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -52,23 +52,29 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const data: Record<string, unknown> = {};
 
-    if (body.name !== undefined) data.name = body.name;
+    if (body.name !== undefined) {
+      if (typeof body.name !== 'string' || body.name.length > 120) return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
+      data.name = body.name;
+    }
     if (body.email !== undefined) {
       const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-      if (!EMAIL_RE.test(body.email)) {
+      if (typeof body.email !== 'string' || body.email.length > 254 || !EMAIL_RE.test(body.email.trim())) {
         return NextResponse.json({ error: "Geçersiz e-posta adresi" }, { status: 400 });
       }
-      data.email = body.email;
+      data.email = body.email.trim().toLowerCase();
     }
 
     // Role changes are admin-only; silently ignored for non-admins.
     if (body.role !== undefined && admin) {
-      data.role = body.role;
+      if (typeof body.role !== 'string' || !['USER', 'ADMIN'].includes(body.role.toUpperCase())) return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+      if (targetId === session.id && body.role.toUpperCase() !== 'ADMIN') return NextResponse.json({ error: 'Cannot remove your own admin role' }, { status: 400 });
+      data.role = body.role.toUpperCase();
     }
 
     // Password change: accept `newPassword` (profile) or `password` (admin reset).
     const newPassword = body.newPassword ?? body.password;
     if (newPassword !== undefined && newPassword !== "") {
+      if (typeof newPassword !== "string" || newPassword.length < 8 || Buffer.byteLength(newPassword, 'utf8') > 72) return NextResponse.json({ error: "Password must be at least 8 characters and at most 72 UTF-8 bytes" }, { status: 400 });
       // A user changing their own password must prove the current one.
       if (!admin) {
         const existing = await prisma.user.findUnique({ where: { id: targetId } });
@@ -100,7 +106,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 // DELETE /api/users/[id] — admin only
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -109,6 +115,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
   try {
     const { id } = await params;
+    if (session.id === Number(id)) return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     await prisma.user.delete({ where: { id: Number(id) } });
     return NextResponse.json({ success: true });
   } catch {

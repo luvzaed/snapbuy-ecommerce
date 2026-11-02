@@ -114,7 +114,6 @@ export default function AdminOrdersPage() {
   }, [authLoading, user, router]);
 
   const fetchAllOrders = async () => {
-    setIsLoading(true);
     try {
       const res = await fetch('/api/orders?all=true');
       if (res.ok) {
@@ -130,10 +129,15 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    if (user?.role === 'admin') {
-      fetchAllOrders();
-    }
-  }, [user]);
+    if (user?.role !== 'admin') return;
+    const controller = new AbortController();
+    fetch('/api/orders?all=true', { signal: controller.signal })
+      .then(response => { if (!response.ok) throw new Error('Order request failed'); return response.json(); })
+      .then(data => { if (!controller.signal.aborted) setOrders(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!controller.signal.aborted) toast.error('Failed to fetch orders'); })
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    return () => controller.abort();
+  }, [user?.id, user?.role]);
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     setUpdatingId(orderId);

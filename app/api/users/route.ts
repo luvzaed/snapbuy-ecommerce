@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, isAdmin } from "@/lib/api-auth";
+import { getAuthenticatedSession, isAdmin } from "@/lib/api-auth";
 import { hashPassword } from "@/lib/password";
 
 // GET /api/users — list all users (admin only)
 export async function GET(req: NextRequest) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -38,7 +38,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, email, password } = body; // `role` intentionally ignored here
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || email.length > 254 || typeof password !== 'string' ||
+        password.length < 8 || Buffer.byteLength(password, 'utf8') > 72 ||
+        (name !== undefined && (typeof name !== 'string' || name.length > 120))) {
       return NextResponse.json({ error: "email and password are required" }, { status: 400 });
     }
 
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name: name ?? null,
-        email,
+        email: email.trim().toLowerCase(),
         password: await hashPassword(password),
         role: "USER", // public registration can never create an admin
       },

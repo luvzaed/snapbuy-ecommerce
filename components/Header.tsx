@@ -105,13 +105,16 @@ export default function Header() {
     };
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    setUserMenuOpen(false);
-
-    toast.success('Başarıyla çıkış yapıldı!');
-
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setUserMenuOpen(false);
+      toast.success('Başarıyla çıkış yapıldı!');
+      router.push('/');
+      router.refresh();
+    } catch {
+      toast.error('Çıkış yapılamadı. Lütfen tekrar deneyin.');
+    }
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {

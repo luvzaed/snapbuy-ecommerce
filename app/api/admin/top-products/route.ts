@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/api-auth";
+import { getAuthenticatedSession } from "@/lib/api-auth";
 
 // GET /api/admin/top-products — top 5 products by units sold (admin only)
 export async function GET(req: NextRequest) {
-  const session = getSession(req);
+  const session = await getAuthenticatedSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

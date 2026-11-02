@@ -31,8 +31,10 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Form data
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
+  const [nameDraft, setEditName] = useState<string | null>(null);
+  const [emailDraft, setEditEmail] = useState<string | null>(null);
+  const editName = nameDraft ?? user?.name ?? '';
+  const editEmail = emailDraft ?? user?.email ?? '';
 
   // Password form
   const [currentPassword, setCurrentPassword] = useState('');
@@ -50,8 +52,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setEditName(user.name || '');
-      setEditEmail(user.email || '');
       fetchOrders();
     }
   }, [user, fetchOrders]);

@@ -8,13 +8,13 @@
  * `python generate_embeddings.py`).
  */
 const VISUAL_SEARCH_URL =
-  process.env.VISUAL_SEARCH_URL || "http://localhost:8000";
+  process.env.VISUAL_SEARCH_URL || "http://127.0.0.1:8000";
 
 export function triggerVisualSearchReindex(reason?: string): void {
   // Don't await — let it run in the background so product saves stay fast.
   fetch(`${VISUAL_SEARCH_URL}/reindex`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(process.env.VISUAL_SEARCH_REINDEX_TOKEN ? { "X-Reindex-Token": process.env.VISUAL_SEARCH_REINDEX_TOKEN } : {}) },
   })
     .then((res) => {
       if (!res.ok) {

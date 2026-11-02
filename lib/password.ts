@@ -13,8 +13,7 @@ export function hashPassword(plain: string): Promise<string> {
 }
 
 // Verify a plaintext password against a stored value.
-// Accepts bcrypt hashes, and falls back to a direct compare for legacy
-// plaintext accounts that haven't been migrated yet.
+// Only bcrypt hashes are accepted; plaintext database passwords cannot log in.
 export async function verifyPassword(
   plain: string,
   stored: string | null | undefined,
@@ -23,6 +22,5 @@ export async function verifyPassword(
   if (isHashed(stored)) {
     return bcrypt.compare(plain, stored);
   }
-  // Legacy plaintext fallback (pre-hashing accounts).
-  return plain === stored;
+  return false;
 }

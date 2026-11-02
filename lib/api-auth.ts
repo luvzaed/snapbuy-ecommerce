@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import prisma from '@/lib/prisma';
 import type { NextRequest } from 'next/server';
 
 export interface Session {
@@ -44,7 +45,8 @@ export function getSession(req: NextRequest): Session | null {
     if (
       typeof decoded === 'object' &&
       decoded !== null &&
-      typeof (decoded as jwt.JwtPayload).id === 'number' &&
+      Number.isSafeInteger((decoded as jwt.JwtPayload).id) &&
+      (decoded as jwt.JwtPayload).id > 0 &&
       typeof (decoded as jwt.JwtPayload).role === 'string'
     ) {
       const payload = decoded as jwt.JwtPayload;
@@ -59,4 +61,18 @@ export function getSession(req: NextRequest): Session | null {
 
 export function isAdmin(session: Session | null): boolean {
   return session?.role === 'admin';
+}
+
+/** Resolve user identity and role from the database on every authenticated API request.
+ * Stale admin-role claims and deleted accounts cannot keep accessing protected APIs.
+ */
+export async function getAuthenticatedSession(req: NextRequest): Promise<Session | null> {
+  const tokenSession = getSession(req);
+  if (!tokenSession) return null;
+  const user = await prisma.user.findUnique({
+    where: { id: tokenSession.id },
+    select: { id: true, role: true },
+  });
+  if (!user) return null;
+  return { id: user.id, role: user.role.toLowerCase() };
 }

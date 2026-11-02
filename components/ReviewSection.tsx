@@ -15,12 +15,12 @@ interface ReviewWithUser {
   rating: number;
   comment: string | null;
   createdAt: string;
-  user: { id: number; name: string | null; email: string };
+  user: { id: number; name: string | null };
 }
 
 function reviewerName(user: ReviewWithUser['user']): string {
   if (user.name && user.name.trim()) return user.name;
-  return user.email.split('@')[0];
+  return 'Müşteri';
 }
 
 function formatDate(iso: string): string {
