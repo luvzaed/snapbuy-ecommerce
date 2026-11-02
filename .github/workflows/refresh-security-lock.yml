@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: '24'
       - run: npm install --package-lock-only --ignore-scripts
+      - run: npm audit fix --package-lock-only --ignore-scripts
       - name: Commit only the generated dependency lock on the security branch
         run: |
           if ! git diff --quiet -- package-lock.json; then
@@ -29,3 +30,4 @@ jobs:
             git commit -m "Refresh lockfile for patched security dependencies"
             git push origin HEAD:security/harden-auth-checkout-visual-search
           fi
+
