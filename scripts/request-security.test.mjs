@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rejectCrossSiteMutation } from '../lib/request-security.ts';
 import { validateImageReference, saveUploadedImage, ImageValidationError } from '../lib/product-images.ts';
+import { hashPassword, verifyPassword } from '../lib/password.ts';
 
 test('browser origins cannot submit authenticated mutations across sites', () => {
   const request = origin => new Request('http://localhost:3000/api/users/logout', { method: 'POST', headers: { origin } });
@@ -19,4 +20,10 @@ test('image URLs reject traversal, SVG and unapproved internal destinations', ()
 test('image uploads reject oversized, scripted and fake images before writing files', async () => {
   await assert.rejects(saveUploadedImage(new File(['<svg onload="alert(1)"/>'], 'image.png', { type: 'image/png' })), ImageValidationError);
   await assert.rejects(saveUploadedImage(new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.jpg')), ImageValidationError);
+});
+test('password verification accepts bcrypt and refuses legacy plaintext values', async () => {
+  const hash = await hashPassword('Test-only-password!');
+  assert.equal(await verifyPassword('Test-only-password!', hash), true);
+  assert.equal(await verifyPassword('wrong', hash), false);
+  assert.equal(await verifyPassword('Test-only-password!', 'Test-only-password!'), false);
 });
