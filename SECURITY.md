@@ -23,8 +23,10 @@ A scan of tracked files and reachable history found no matching configured signi
 
 - A previously stolen JWT remains usable until its seven-day expiry. Logout clears the browser cookie, and password changes do not revoke old tokens. Rotate the signing secret after suspected compromise. Public hosting should add server-side revocation.
 - Throttling is per process; distributed hosting needs a shared limiter/WAF and trusted proxy configuration.
+- The full development-tool audit still reports moderate minimatch advisories in lint tooling. Production dependency checks gate high/critical findings. No forced, incompatible linter downgrade is applied.
 - This demo has no payment gateway, email verification, password recovery or independent penetration-test certification.
 - Remote images and initial CLIP downloads need internet. The optional Python model-based service requires its own runtime verification.
 - Local backups contain personal records and password hashes. Keep them private and make consistent PostgreSQL backups. Do not delete the database directory to troubleshoot.
 
 Before any public deployment, review dependency audits, HTTPS, CSP, CSRF, rate limits, revocation, backups, database privileges and the Python service for that environment.
+
