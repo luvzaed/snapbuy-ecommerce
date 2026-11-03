@@ -1,60 +1,105 @@
-# Snapbuy: local PostgreSQL edition
+# Snapbuy
 
-This e-commerce demonstration uses Next.js, Prisma and PostgreSQL on your computer. It uses application bcrypt accounts, not Supabase Auth. The website binds to loopback and checkout creates demo orders without collecting cards or taking payments.
+A full-stack e-commerce demo built with **Next.js, TypeScript, Prisma and PostgreSQL**, with a Turkish storefront, an admin panel and optional image-based product search.
 
-## Local Windows setup
+This edition runs with a database on your own computer. Checkout creates demo orders without collecting card details or processing payments.
 
-Install Node.js 24 and PostgreSQL 18 with pgvector, then run `npm ci` once while online and `npm run dev`. Startup prepares a private database on `127.0.0.1:55432`, applies migrations, generates Prisma and writes an ignored `.env`. Open `http://127.0.0.1:3000`. The alternative launcher is `Start-Snapbuy.cmd`.
+## Screenshots
 
-Database files, passwords, logs and login instructions are in `.local/`. Keep that folder private and preserve it when moving the project. Initial credentials are in `.local/LOGIN.txt`. A fresh clone starts empty: private customer records and backups are not published in this repository.
+### Storefront
 
-## Import and verify
+![Snapbuy homepage featured product carousel](docs/screenshots/home.jpg)
 
-Run the entire read-only `EXPORT-SNAPBUY.sql` in Supabase SQL Editor and download all six result rows with Export → Download CSV. Keep the file private. Run `npm run db:import:file -- "C:\path\to\snapbuy-export.csv"` from this project. The importer backs up locally, preserves IDs and relationships, verifies the records, and refuses to overwrite existing local application data. Use your original account after import. Supabase is only read, not cancelled.
+### Product catalogue
 
-`npm test` and `npm run lint` run local checks. With the website running, `npm run db:test` exercises temporary accounts, privacy, authorization and checkout and cleans up its fixtures. GitHub Actions builds and tests against a separate disposable PostgreSQL database with test-only credentials.
+![Product catalogue with search, category filters and sorting](docs/screenshots/shop.jpg)
 
-For a production build on this computer, run `npm run db:setup`, `npm run build`, then `npm start`. `Stop-Database.cmd` stops PostgreSQL. There is no automatic Windows service. See [OFFLINE-SETUP.md](OFFLINE-SETUP.md).
+### Product details
 
-## Offline scope
+![Product details with pricing, stock and shopping controls](docs/screenshots/product.jpg)
 
-Fonts and existing product-image files are local. Remote image URLs still require internet; `ALLOWED_IMAGE_HOSTS` controls approved HTTPS hosts for Next.js and Python. The optional Python service needs installed dependencies and cached CLIP weights before offline use. It reads the local `.env`, binds to loopback and protects reindex with a generated token. Rebuild its JSON index once with `python generate_embeddings.py`, then run `python main.py` inside `visual-search-server`. Legacy pickle files are never loaded.
+## Features
 
-This is a local demo, not a certified production payment service. Review [SECURITY.md](SECURITY.md) before internet hosting.
+- Product browsing, text search, category and price filters, sorting and pagination.
+- Product details, customer reviews and a shopping cart with quantity controls.
+- Account registration, login, profile settings and customer order history.
+- Demo checkout with server-side price and stock validation.
+- Admin pages for products, orders and users, protected by server-side role checks.
+- Light and dark themes.
+- Optional visual search using a Python FastAPI service and OpenCLIP image embeddings.
 
-## Original scaffold references
+## Tech stack
 
-## Getting Started
+| Area | Technology |
+| --- | --- |
+| Web application | Next.js App Router, React, TypeScript |
+| Styling | Tailwind CSS, next-themes, Lucide icons |
+| Data | PostgreSQL, Prisma, pg |
+| Authentication | bcrypt password hashes, signed JWTs in HttpOnly cookies |
+| Optional visual search | Python, FastAPI, PyTorch, OpenCLIP, NumPy |
+| Checks | Node.js tests, ESLint, GitHub Actions, database integration checks |
 
-First, run the development server:
+## Run locally on Windows
 
-```bash
+Install **Node.js 24** and **PostgreSQL 18 with pgvector**. Clone the repository, open its folder, then run:
+
+```powershell
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Startup prepares the local database on `127.0.0.1:55432`, applies migrations and generates the Prisma client. `Start-Snapbuy.cmd` is an alternative launcher.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+A fresh clone starts with an empty catalogue. Product image files alone do not create database records. Use the admin product pages to add products, or import your own export as described below. Initial login instructions are generated in `.local/LOGIN.txt`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Database files, private settings, passwords and logs stay in the ignored `.local/` directory and `.env`. Preserve them when moving an existing installation. Stop the website and use `Stop-Database.cmd` before moving the project.
 
-## Learn More
+For detailed setup, see [OFFLINE-SETUP.md](OFFLINE-SETUP.md).
 
-To learn more about Next.js, take a look at the following resources:
+## Import an existing Supabase database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Run the complete read-only [EXPORT-SNAPBUY.sql](EXPORT-SNAPBUY.sql) in Supabase SQL Editor, then download all six result rows using **Export → Download CSV**. Keep the export private and import it with:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```powershell
+npm run db:import:file -- "C:\path\to\snapbuy-export.csv"
+```
 
-## Deploy on Vercel
+The importer creates a local backup, preserves IDs and relationships, verifies copied records and refuses to overwrite existing application data. The export only reads Supabase; it does not delete or cancel the hosted database. Private records and backups are excluded from this repository.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Optional visual search and offline use
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Python service needs its dependencies installed and CLIP model weights cached before offline use. Inside `visual-search-server`, rebuild the JSON index and start the service:
+
+```powershell
+python generate_embeddings.py
+python main.py
+```
+
+The service uses the local database configuration, binds to loopback and requires a generated token for reindexing. Legacy pickle indexes are never loaded. Existing local fonts and product images work offline; remote image URLs still require internet access and an approved `ALLOWED_IMAGE_HOSTS` setting.
+
+## Validation
+
+```powershell
+npm test
+npm run lint
+```
+
+With the website running, use a second terminal for:
+
+```powershell
+npm run db:test
+```
+
+The integration checks exercise temporary accounts, privacy, authorization and checkout, then clean up their fixtures. GitHub Actions builds and tests against a separate disposable PostgreSQL database.
+
+For a production build on this computer:
+
+```powershell
+npm run db:setup
+npm run build
+npm start
+```
+
+## Security and project scope
+
+This is a local e-commerce demonstration. It is not a production payment service. Authentication uses application accounts rather than Supabase Auth. Read [SECURITY.md](SECURITY.md) for the security controls, known limitations and requirements before internet hosting.
