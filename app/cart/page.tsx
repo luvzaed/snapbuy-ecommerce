@@ -156,10 +156,12 @@ export default function CartPage() {
     (item) => (liveStock[item.product.id] ?? item.product.stock) === 0,
   );
 
-  const total = cart.reduce(
+  const subtotal = cart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0,
   );
+  const tax = subtotal * 0.20;
+  const total = subtotal + tax;
 
   // Navigate to the multi-step checkout (shipping → payment → review).
   // The order is placed at the end of the checkout wizard, not here.
@@ -223,7 +225,7 @@ export default function CartPage() {
             <div className="flex flex-col gap-3 mb-6">
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span>Ara Toplam</span>
-                <span className="font-medium">₺{total.toFixed(2)}</span>
+                <span className="font-medium">₺{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span>Kargo</span>
@@ -232,13 +234,13 @@ export default function CartPage() {
               <div className="flex justify-between text-slate-600 dark:text-slate-300">
                 <span>KDV (%20)</span>
                 <span className="font-medium">
-                  ₺{(total * 0.20).toFixed(2)}
+                  ₺{tax.toFixed(2)}
                 </span>
               </div>
               <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between text-slate-900 dark:text-white font-bold text-lg">
                 <span>Toplam</span>
                 <span className="text-gradient">
-                  ₺{(total * 1.08).toFixed(2)}
+                  ₺{total.toFixed(2)}
                 </span>
               </div>
             </div>
