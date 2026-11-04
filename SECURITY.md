@@ -11,7 +11,7 @@ The default is a local Windows demonstration. PostgreSQL uses SCRAM passwords on
 - Checkout validates quantities, duplicates and stock; prices come from PostgreSQL and stock updates are transactional. Only known shipping/contact fields can be saved. Card details are not collected or sent.
 - Images are limited to 5 MB/20 million pixels, decoded and re-encoded as JPEG with random names. SVG/fake images are rejected. Approved HTTPS hosts and constrained local paths prevent arbitrary file references/deletion.
 - Visual search uses loopback, image limits, a reindex token, constrained image paths/hosts and JSON indexes instead of executable pickle.
-- Credentials, databases, logs, indexes, exports and backups are ignored by Git. Never force-add them. Import checks verify exports and copied values before committing local records.
+- Credentials, databases, logs, indexes, exports and backups are ignored by Git. Never force-add them.
 
 ## Secrets and private data
 

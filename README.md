@@ -50,32 +50,50 @@ npm run dev
 
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Startup prepares the local database on `127.0.0.1:55432`, applies migrations and generates the Prisma client. `Start-Snapbuy.cmd` is an alternative launcher.
 
-A fresh clone starts with an empty catalogue. Product image files alone do not create database records. Use the admin product pages to add products, or import your own export as described below. Initial login instructions are generated in `.local/LOGIN.txt`.
+A fresh clone starts with an empty catalogue. Product image files alone do not create database records. Use the admin product pages to add products. Initial login instructions are generated in `.local/LOGIN.txt`.
 
 Database files, private settings, passwords and logs stay in the ignored `.local/` directory and `.env`. Preserve them when moving an existing installation. Stop the website and use `Stop-Database.cmd` before moving the project.
 
 For detailed setup, see [OFFLINE-SETUP.md](OFFLINE-SETUP.md).
 
-## Import an existing Supabase database
-
-Run the complete read-only [EXPORT-SNAPBUY.sql](EXPORT-SNAPBUY.sql) in Supabase SQL Editor, then download all six result rows using **Export → Download CSV**. Keep the export private and import it with:
-
-```powershell
-npm run db:import:file -- "C:\path\to\snapbuy-export.csv"
-```
-
-The importer creates a local backup, preserves IDs and relationships, verifies copied records and refuses to overwrite existing application data. The export only reads Supabase; it does not delete or cancel the hosted database. Private records and backups are excluded from this repository.
-
 ## Optional visual search and offline use
 
-The Python service needs its dependencies installed and CLIP model weights cached before offline use. Inside `visual-search-server`, rebuild the JSON index and start the service:
+The image-search feature runs in a separate **Python FastAPI server** using **OpenCLIP**. It converts product images and an uploaded query image into embeddings, then returns the closest matching products.
+
+Keep the website running in one terminal. Open a second terminal in the project folder:
 
 ```powershell
+cd visual-search-server
+python -m pip install -r requirements.txt
 python generate_embeddings.py
 python main.py
 ```
 
-The service uses the local database configuration, binds to loopback and requires a generated token for reindexing. Legacy pickle indexes are never loaded. Existing local fonts and product images work offline; remote image URLs still require internet access and an approved `ALLOWED_IMAGE_HOSTS` setting.
+Install dependencies once. Rebuild the index on first setup or when replacing an old index. For later sessions, start the service with `python main.py`. Python dependencies and the CLIP model weights need internet for their initial download; cache them before offline use.
+
+- [Health check](http://127.0.0.1:8000/health): check that `products_indexed` is greater than zero.
+- [Interactive API documentation](http://127.0.0.1:8000/docs): inspect the service endpoints.
+- On the storefront, select the image-search icon beside the search field, upload a product photo and view the matches. This results view is useful for a README screenshot.
+
+The service uses the local database configuration, binds to loopback and requires a generated token for reindexing. Its index is saved privately as `visual-search-server/embeddings/products.json`; legacy pickle indexes are never loaded. Existing local fonts and product images work offline; remote image URLs still require internet access and an approved `ALLOWED_IMAGE_HOSTS` setting.
+
+## Project files
+
+| File or folder | Purpose |
+| --- | --- |
+| `app/`, `components/`, `lib/` | Storefront, admin pages, API routes and shared application code |
+| `prisma/`, `prisma.config.ts` | Database schema, migrations and Prisma configuration |
+| `public/`, `docs/screenshots/` | Product images and README screenshots |
+| `visual-search-server/` | Optional Python image-search service |
+| `scripts/` | Local database setup, diagnostics and checks |
+| `Start-Snapbuy.ps1` | Prepares PostgreSQL before `npm run dev` |
+| `Start-Snapbuy.cmd`, `Stop-Database.cmd`, `Test-Snapbuy.cmd` | Windows shortcuts to start, stop and verify the application |
+| `package.json`, `package-lock.json` | Commands and reproducible dependency versions |
+| `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs` | Framework, TypeScript, lint and styling configuration |
+| `proxy.ts` | Admin-page access checks |
+| `README.md`, `OFFLINE-SETUP.md`, `SECURITY.md` | Project overview, setup instructions and security scope |
+
+The completed Supabase migration tooling has been removed from the current version. Earlier migration tools remain available in Git history. Existing local databases and private records are separate from the repository.
 
 ## Validation
 

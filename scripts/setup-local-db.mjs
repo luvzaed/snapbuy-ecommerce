@@ -26,7 +26,7 @@ await extensionClient.connect();
 try { await extensionClient.query('CREATE EXTENSION IF NOT EXISTS vector'); }
 finally { await extensionClient.end(); }
 
-const envText = `# Local computer only. Supabase settings remain in the original project.\nDATABASE_URL="${databaseUrl}"\nJWT_SECRET="${settings.jwtSecret}"\nVISUAL_SEARCH_URL="http://127.0.0.1:8000"\nVISUAL_SEARCH_REINDEX_TOKEN="${settings.reindexToken}"\nVISUAL_SEARCH_BIND_HOST="127.0.0.1"\n`;
+const envText = `# Local computer only. Private connection settings are kept out of Git.\nDATABASE_URL="${databaseUrl}"\nJWT_SECRET="${settings.jwtSecret}"\nVISUAL_SEARCH_URL="http://127.0.0.1:8000"\nVISUAL_SEARCH_REINDEX_TOKEN="${settings.reindexToken}"\nVISUAL_SEARCH_BIND_HOST="127.0.0.1"\n`;
 if (fs.existsSync('.env') && !fs.readFileSync('.env', 'utf8').includes(databaseUrl)) {
   throw new Error('The existing .env does not match this local database. Refusing to overwrite it.');
 }
@@ -36,7 +36,7 @@ for (const args of [['migrate', 'deploy'], ['generate']]) {
   const result = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', ...args], {
     stdio: 'inherit', timeout: 120000, env: { ...process.env, DATABASE_URL: databaseUrl }
   });
-  if (result.error?.code === 'ETIMEDOUT') throw new Error(`Prisma ${args[0]} exceeded 2 minutes. Setup stopped; the Supabase import has not started.`);
+  if (result.error?.code === 'ETIMEDOUT') throw new Error(`Prisma ${args[0]} exceeded 2 minutes. Local database setup stopped.`);
   if (result.status !== 0) throw new Error(`Prisma ${args[0]} failed.`);
 }
 const app = new Client({ ...connection, user: 'snapbuy_app', password: settings.appPassword, database: settings.database });
@@ -45,7 +45,7 @@ try {
   const email = 'admin@snapbuy.local';
   const existing = await app.query('SELECT id FROM "User" WHERE email = $1', [email]);
   if (fs.existsSync('.local/import-report.json')) {
-    fs.writeFileSync('.local/LOGIN.txt', 'Supabase records have been imported. Sign in with your original website account and password.\n');
+    fs.writeFileSync('.local/LOGIN.txt', 'Existing records have been retained. Sign in with your original website account and password.\n');
   } else if (!existing.rowCount) {
     await app.query('INSERT INTO "User" (email, name, password, role, "updatedAt") VALUES ($1, $2, $3, $4, NOW())',
       [email, 'Local administrator', await bcrypt.hash(settings.adminPassword, 12), 'ADMIN']);
