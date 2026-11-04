@@ -4,7 +4,7 @@ Set-Location -LiteralPath $PSScriptRoot
 $pgBin = 'C:\Program Files\PostgreSQL\18\bin'
 $data = Join-Path $PSScriptRoot '.local\postgres'
 $settingsFile = Join-Path $PSScriptRoot '.local\settings.json'
-if (-not (Test-Path "$pgBin\pg_ctl.exe")) { throw 'PostgreSQL 18 is required.' }
+if (-not (Test-Path "$pgBin\pg_ctl.exe") -or -not (Test-Path "$pgBin\pg_isready.exe")) { throw 'PostgreSQL 18 is required.' }
 if (-not (Test-Path 'node_modules\prisma\build\index.js')) { throw 'Project dependencies are missing. Run npm ci while connected to the internet first.' }
 New-Item -ItemType Directory -Path '.local' -Force | Out-Null
 if (-not (Test-Path $settingsFile)) {
@@ -35,27 +35,40 @@ if (-not (Test-Path "$data\PG_VERSION")) {
     Add-Content -LiteralPath "$data\postgresql.conf" -Value "`nlisten_addresses = '127.0.0.1'`nport = 55432`n"
 }
 if (-not (Test-Path "$data\global\pg_control")) { throw 'The local database initialization is incomplete. Do not overwrite it; contact Codex to inspect it.' }
-$savedErrorPreference = $ErrorActionPreference
-$ErrorActionPreference = 'Continue'
-& "$pgBin\pg_ctl.exe" -D $data status *> $null
-$databaseStatus = $LASTEXITCODE
-$ErrorActionPreference = $savedErrorPreference
-if ($databaseStatus -ne 0) {
+function Get-LocalDatabaseReadiness {
+    # Process visibility can make pg_ctl status report a live server as stopped.
+    # Check loopback readiness; setup below authenticates using our settings.
+    $savedErrorPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & "$pgBin\pg_isready.exe" -h 127.0.0.1 -p $settings.port -U snapbuy_owner -d postgres -t 2 *> $null
+        return $LASTEXITCODE
+    } finally { $ErrorActionPreference = $savedErrorPreference }
+}
+$startupTimer = [Diagnostics.Stopwatch]::StartNew()
+$databaseReadiness = Get-LocalDatabaseReadiness
+if ($databaseReadiness -eq 3) { throw 'The local PostgreSQL connection check could not run. Check the PostgreSQL installation and local port settings.' }
+if ($databaseReadiness -eq 2) {
     $log = Join-Path $PSScriptRoot '.local\postgres.log'
     $startOutput = Join-Path $PSScriptRoot '.local\postgres-start.log'
     $startError = Join-Path $PSScriptRoot '.local\postgres-start-error.log'
     Write-Host 'Starting PostgreSQL (maximum 30 seconds)...'
-    # Start-Process -Wait also waits for the persistent postgres child server.
-    # Wait only for pg_ctl itself, which exits once the server is ready.
+    # Wait only for pg_ctl, not the persistent postgres child server.
     $start = Start-Process -FilePath "$pgBin\pg_ctl.exe" -ArgumentList @('-D', ('"' + $data + '"'), '-l', ('"' + $log + '"'), '-t', '20', '-w', 'start') -WindowStyle Hidden -PassThru -RedirectStandardOutput $startOutput -RedirectStandardError $startError
-    if (-not $start.WaitForExit(30000)) {
-        throw 'The PostgreSQL startup helper did not finish within 30 seconds. No data was deleted. Check .local\postgres.log before trying again.'
-    }
-    $start.Refresh()
-    if ($start.ExitCode -ne 0) {
-        Get-Content -LiteralPath $startOutput, $startError -ErrorAction SilentlyContinue | Write-Host
-        throw "PostgreSQL could not start. See .local\postgres-start-error.log and .local\postgres.log."
-    }
+    [void]$start.WaitForExit(30000)
+} elseif ($databaseReadiness -eq 1) {
+    Write-Host 'PostgreSQL is already starting or recovering. Waiting for it to accept connections...'
+}
+while ($databaseReadiness -ne 0 -and $startupTimer.Elapsed.TotalSeconds -lt 30) {
+    $databaseReadiness = Get-LocalDatabaseReadiness
+    if ($databaseReadiness -eq 3) { throw 'The local PostgreSQL connection check failed. Check the PostgreSQL installation and local port settings.' }
+    if ($databaseReadiness -ne 0) { Start-Sleep -Milliseconds 500 }
+}
+# Verify the connection even if the startup helper reports an error or times out.
+$databaseReadiness = Get-LocalDatabaseReadiness
+if ($databaseReadiness -ne 0) {
+    Get-Content -LiteralPath (Join-Path $PSScriptRoot '.local\postgres-start.log'), (Join-Path $PSScriptRoot '.local\postgres-start-error.log') -ErrorAction SilentlyContinue | Write-Host
+    throw 'PostgreSQL is not accepting local connections after 30 seconds. See .local\postgres-start-error.log and .local\postgres.log.'
 }
 Write-Host 'PostgreSQL is running. Preparing application tables...'
 & node 'scripts\setup-local-db.mjs'
