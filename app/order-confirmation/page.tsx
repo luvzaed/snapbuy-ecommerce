@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useAuth, AuthOrder, AuthOrderItem } from '@/lib/auth-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -60,39 +60,34 @@ const statusDisplay: Record<
   },
 };
 
-export default function OrderConfirmationPage() {
-  const { user, loading: authLoading, orders, fetchOrders } = useAuth();
+function ConfirmationContent({ orderId }: { orderId: number }) {
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [latestOrder, setLatestOrder] = useState<AuthOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    // Fetch latest orders and grab the most recent one
+    if (!user) { router.push('/login'); return; }
+    const controller = new AbortController();
     const loadOrder = async () => {
-      await fetchOrders();
-      setLoading(false);
+      try {
+        if (!Number.isSafeInteger(orderId) || orderId < 1) return;
+        const response = await fetch(`/api/orders/${orderId}`, { cache: 'no-store', signal: controller.signal });
+        if (response.ok && !controller.signal.aborted) setLatestOrder(await response.json());
+      } catch {
+        // A missing/inaccessible order must never fall back to another order.
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
     };
-    loadOrder();
-  }, [authLoading, user, fetchOrders, router]);
-
-  // Update latest order when orders change
-  useEffect(() => {
-    if (orders.length > 0) {
-      const timer = setTimeout(() => {
-        setLatestOrder(orders[0]); // orders are sorted by createdAt desc
-        setLoading(false);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [orders]);
+    void loadOrder();
+    return () => controller.abort();
+  }, [authLoading, user, router, orderId]);
 
   if (!user) return null;
+  if (loading) return <div className="pt-32 text-center">Sipariş detayları yükleniyor...</div>;
+  if (!latestOrder) return <div role="alert" className="pt-32 text-center">Sipariş bulunamadı. <Link href="/dashboard" className="underline">Siparişlerime Git</Link></div>;
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
@@ -258,3 +253,13 @@ export default function OrderConfirmationPage() {
   );
 }
 
+
+function ConfirmationFromUrl() {
+  const params = useSearchParams();
+  const orderId = Number(params.get('id'));
+  return <ConfirmationContent key={orderId} orderId={orderId} />;
+}
+
+export default function OrderConfirmationPage() {
+  return <Suspense fallback={<div className="pt-32 text-center">Yükleniyor...</div>}><ConfirmationFromUrl /></Suspense>;
+}

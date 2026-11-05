@@ -33,12 +33,13 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --audit-level=moderate
       - run: node node_modules/prisma/build/index.js generate
       - run: node node_modules/prisma/build/index.js migrate deploy
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
       - name: Verify login, authorization, privacy and checkout against PostgreSQL
         run: |
           node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000 > /tmp/snapbuy-server.log 2>&1 &
@@ -49,3 +50,29 @@ jobs:
             sleep 1
           done
           node scripts/verify-local.mjs --ci
+          node scripts/browser-checks.mjs
+  visual-search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install CPU model runtime and Python service dependencies
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r visual-search-server/requirements.txt httpx pip-audit
+          python -m pip check
+          python -c "import torch, open_clip; print('CPU model runtime imports successfully:', torch.__version__)"
+      - name: Audit the complete Python service environment
+        run: |
+          # Official CPU wheels use +cpu; audit their public release versions
+          # rather than allowing the vulnerability service to skip them.
+          python -m pip list --format=freeze | sed 's/+cpu$//' > /tmp/snapbuy-python-audit.txt
+          python -m pip_audit --no-deps --disable-pip -r /tmp/snapbuy-python-audit.txt
+      - name: Verify request handling and concurrent index rebuilds without downloading model weights
+        run: python -m unittest discover -s visual-search-server -p 'test_*.py' -v

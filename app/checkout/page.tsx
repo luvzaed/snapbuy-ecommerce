@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -85,7 +84,7 @@ function InputField({
 }
 
 export default function CheckoutPage() {
-  const { user, loading, cart, placeOrder, isCheckingOut, updateQuantity } =
+  const { user, loading, cart, placeOrder, isCheckingOut, refreshCart } =
     useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -113,61 +112,19 @@ export default function CheckoutPage() {
   // redirect below from bouncing the user to /cart instead of the confirmation.
   const orderPlacedRef = useRef(false);
 
-  // Guards the live-stock validation below so it runs only once per visit.
-  const stockValidatedRef = useRef(false);
-
-  // Re-validate cart stock against the DB on load, in case the cart was stale
-  // by the time the user reached checkout (mirrors the check on /cart).
+  const [cartVerified, setCartVerified] = useState(false);
+  const [cartError, setCartError] = useState('');
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (loading || !user || cart.length === 0) return;
-    if (stockValidatedRef.current) return;
-    stockValidatedRef.current = true;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const res = await fetch('/api/products');
-        if (!res.ok || cancelled) return;
-        const products: Product[] = await res.json();
-        if (cancelled) return;
-
-        const map: Record<number, number> = {};
-        products.forEach((p) => {
-          map[p.id] = p.stock;
-        });
-
-        // Any out-of-stock item: bounce back to the cart to resolve it there.
-        const outOfStock = cart.some(
-          (item) => (map[item.product.id] ?? 0) === 0,
-        );
-        if (outOfStock) {
-          toast.error(
-            'Sepetinizde stokta olmayan bir ürün var. Lütfen sepetinizi güncelleyin.',
-          );
-          router.push('/cart');
-          return;
-        }
-
-        // Cap any quantity that now exceeds available stock.
-        cart.forEach((item) => {
-          const stock = map[item.product.id];
-          if (stock !== undefined && stock > 0 && item.quantity > stock) {
-            updateQuantity(item.product.id, stock);
-            toast(
-              `"${item.product.name}" için stok ${stock} adede düştü. Sepetiniz güncellendi.`,
-              { icon: '⚠️' },
-            );
-          }
-        });
-      } catch (err) {
-        console.error('Failed to validate checkout stock:', err);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loading, user, cart, router, updateQuantity]);
+    if (loading || !user) return;
+    const controller = new AbortController();
+    refreshCart(controller.signal).then(() => {
+      if (!controller.signal.aborted) { setCartVerified(true); setCartError(''); }
+    }).catch(error => {
+      if (!controller.signal.aborted) setCartError(error.message);
+    });
+    return () => controller.abort();
+  }, [loading, user, refreshCart, retry]);
 
   // Redirect if not logged in or cart is empty (wait for auth to hydrate first)
   useEffect(() => {
@@ -241,23 +198,24 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    // Mark that we're placing an order so the empty-cart redirect doesn't fire
-    // when placeOrder() clears the cart on success.
+    if (!cartVerified || cart.some(item => item.product.stock === 0)) {
+      toast.error('Devam etmeden önce sepetinizdeki stok ve fiyat bilgilerini kontrol edin.');
+      return;
+    }
     orderPlacedRef.current = true;
-    // Place the order here at the final review step, sending the collected
-    // shipping + contact info (card data is intentionally not persisted).
-    const success = await placeOrder(shipping, total);
-    if (success) {
+    try {
+      const orderId = await placeOrder(shipping, total);
       toast.success('Siparişiniz başarıyla oluşturuldu!');
-      router.push('/order-confirmation');
-    } else {
+      router.push(`/order-confirmation?id=${orderId}`);
+    } catch (error) {
       orderPlacedRef.current = false;
-      toast.error('Sipariş oluşturulamadı. Lütfen tekrar deneyin.');
+      toast.error(error instanceof Error ? error.message : 'Sipariş oluşturulamadı. Lütfen tekrar deneyin.');
     }
   };
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+      {cartError && <div role="alert" className="mb-6 text-red-500">{cartError} <button className="underline" onClick={() => setRetry(value => value + 1)}>Tekrar dene</button></div>}
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link
@@ -572,7 +530,7 @@ export default function CheckoutPage() {
             ) : (
               <button
                 onClick={handlePlaceOrder}
-                disabled={isCheckingOut}
+                disabled={isCheckingOut || !cartVerified || cart.some(item => item.product.stock === 0)}
                 className="flex items-center gap-2 px-8 py-3.5 rounded-xl gradient-brand text-white font-semibold hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
               >
                 {isCheckingOut ? (

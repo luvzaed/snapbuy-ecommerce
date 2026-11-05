@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { Client } from 'pg';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { config } from 'dotenv';
+config({ path: ['.env.local', '.env'], quiet: true });
 
 // Use only this launcher's database. Never read the original Supabase .env.
 const ci = process.argv.includes('--ci');
@@ -12,7 +14,7 @@ if (ci) {
   assert.equal(url.hostname, '127.0.0.1');
   assert.equal(url.pathname, '/snapbuy_ci');
 }
-const settings = ci ? { database: 'snapbuy_local', port: 55432, jwtSecret: process.env.JWT_SECRET } : JSON.parse(fs.readFileSync('.local/settings.json', 'utf8'));
+const settings = ci ? { database: 'snapbuy_local', port: 55432, jwtSecret: process.env.JWT_SECRET } : { ...JSON.parse(fs.readFileSync('.local/settings.json', 'utf8')), jwtSecret: process.env.JWT_SECRET };
 assert.equal(settings.database, 'snapbuy_local');
 assert.equal(settings.port, 55432);
 const db = new Client(ci ? { connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 5000 } : { host: '127.0.0.1', port: 55432, database: 'snapbuy_local',
@@ -58,7 +60,8 @@ try {
   assert.ok(login.cookie, 'Login must set a session cookie');
   check('Session can be verified', (await request('/api/users/me', 'GET', undefined, login.cookie)).status, 200);
   check('Ordinary user cannot list all users', (await request('/api/users', 'GET', undefined, login.cookie)).status, 403);
-  const forgedRole = `auth_session=${jwt.sign({ id: userId, role: 'admin' }, settings.jwtSecret, { algorithm: 'HS256', expiresIn: '5m' })}`;
+  const loginClaims = jwt.verify(login.cookie.slice('auth_session='.length), settings.jwtSecret);
+  const forgedRole = `auth_session=${jwt.sign({ id: userId, role: 'admin', jti: loginClaims.jti }, settings.jwtSecret, { algorithm: 'HS256', expiresIn: '5m' })}`;
   check('A stale admin claim cannot grant an ordinary user privileges', (await request('/api/users', 'GET', undefined, forgedRole)).status, 403);
   const accounts = await request('/api/users', 'GET', undefined, admin.cookie);
   check('Admin user listing excludes passwords', accounts.json.every(account => !Object.hasOwn(account, 'password')), true);
@@ -74,7 +77,9 @@ try {
   check('Negative order quantity is rejected', (await request('/api/orders', 'POST', { items: [{ productId, quantity: -1 }] }, login.cookie)).status, 400);
   check('Duplicate products are rejected', (await request('/api/orders', 'POST', { items: [{ productId, quantity: 1 }, { productId, quantity: 1 }] }, login.cookie)).status, 400);
   check('Overselling is rejected', (await request('/api/orders', 'POST', { items: [{ productId, quantity: 4 }] }, login.cookie)).status, 400);
-  const order = await request('/api/orders', 'POST', { items: [{ productId, quantity: 2 }], shipping: { fullName: 'Local test', city: 'Test', cvv: '123' } }, login.cookie);
+  check('A changed checkout total is rejected', (await request('/api/orders', 'POST', { total: 1, items: [{ productId, quantity: 2 }] }, login.cookie)).status, 409);
+  check('Rejected quote does not reduce stock', (await db.query('SELECT stock FROM "Product" WHERE id = $1', [productId])).rows[0].stock, 3);
+  const order = await request('/api/orders', 'POST', { total: 24, items: [{ productId, quantity: 2 }], shipping: { fullName: 'Local test', city: 'Test', cvv: '123' } }, login.cookie);
   check('Order can be placed', order.status, 201);
   check('Order total uses database price and tax', order.json.total, 24);
   check('Unexpected payment fields cannot be saved in shipping', Object.hasOwn(order.json.shipping, 'cvv'), false);
@@ -87,7 +92,22 @@ try {
   const logout = await request('/api/users/logout', 'POST', {}, login.cookie);
   check('Logout succeeds', logout.status, 200);
   check('Logout clears the cookie', logout.cookie, 'auth_session=');
+  check('A copied cookie cannot be replayed after logout', (await request('/api/users/me', 'GET', undefined, login.cookie)).status, 401);
   check('Missing cookie cannot reuse the session', (await request('/api/users/me')).status, 401);
+  const fresh = await request('/api/users/login', 'POST', { email, password });
+  const otherDevice = await request('/api/users/login', 'POST', { email, password });
+  check('Password change succeeds', (await request(`/api/users/${userId}`, 'PUT', { currentPassword: password, newPassword: password + '-new' }, fresh.cookie)).status, 200);
+  check('Password change revokes the current session', (await request('/api/users/me', 'GET', undefined, fresh.cookie)).status, 401);
+  check('Password change revokes other device sessions', (await request('/api/users/me', 'GET', undefined, otherDevice.cookie)).status, 401);
+  check('Old password stops working', (await request('/api/users/login', 'POST', { email, password })).status, 401);
+  const newLogin = await request('/api/users/login', 'POST', { email, password: password + '-new' });
+  check('New password can sign in', newLogin.status, 200);
+  check('Confirmation can read the exact created order', (await request(`/api/orders/${order.json.id}`, 'GET', undefined, newLogin.cookie)).json.id, order.json.id);
+  const secondOrder = await request('/api/orders', 'POST', { total: 12, items: [{ productId, quantity: 1 }] }, newLogin.cookie);
+  check('A second order can be placed', secondOrder.status, 201);
+  check('First confirmation stays on its original order', (await request(`/api/orders/${order.json.id}`, 'GET', undefined, newLogin.cookie)).json.id, order.json.id);
+  check('Administrator can delete an order', (await request(`/api/orders/${secondOrder.json.id}`, 'DELETE', undefined, admin.cookie)).status, 200);
+  check('Order deletion removes its items', Number((await db.query('SELECT COUNT(*) AS count FROM "OrderItem" WHERE "orderId" = $1', [secondOrder.json.id])).rows[0].count), 0);
   console.log(`\n${passed} checks passed. Connected to PostgreSQL on this computer.`);
 } catch (error) {
   console.error(`Verification failed: ${error.message}`);

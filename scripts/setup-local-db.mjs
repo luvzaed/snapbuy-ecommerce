@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { Client } from 'pg';
 import bcrypt from 'bcryptjs';
+import { prepareLocalEnv } from './local-env.mjs';
 
 const settings = JSON.parse(fs.readFileSync('.local/settings.json', 'utf8'));
 if (settings.port !== 55432 || settings.database !== 'snapbuy_local') throw new Error('Unexpected local database settings.');
@@ -26,11 +27,15 @@ await extensionClient.connect();
 try { await extensionClient.query('CREATE EXTENSION IF NOT EXISTS vector'); }
 finally { await extensionClient.end(); }
 
-const envText = `# Local computer only. Private connection settings are kept out of Git.\nDATABASE_URL="${databaseUrl}"\nJWT_SECRET="${settings.jwtSecret}"\nVISUAL_SEARCH_URL="http://127.0.0.1:8000"\nVISUAL_SEARCH_REINDEX_TOKEN="${settings.reindexToken}"\nVISUAL_SEARCH_BIND_HOST="127.0.0.1"\n`;
-if (fs.existsSync('.env') && !fs.readFileSync('.env', 'utf8').includes(databaseUrl)) {
-  throw new Error('The existing .env does not match this local database. Refusing to overwrite it.');
-}
-fs.writeFileSync('.env', envText);
+const existingEnv = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
+const envText = prepareLocalEnv(existingEnv, {
+  DATABASE_URL: databaseUrl,
+  JWT_SECRET: settings.jwtSecret,
+  VISUAL_SEARCH_URL: 'http://127.0.0.1:8000',
+  VISUAL_SEARCH_REINDEX_TOKEN: settings.reindexToken,
+  VISUAL_SEARCH_BIND_HOST: '127.0.0.1',
+});
+if (envText !== existingEnv) fs.writeFileSync('.env', envText);
 for (const args of [['migrate', 'deploy'], ['generate']]) {
   console.log(`Running Prisma ${args.join(' ')} (maximum 2 minutes)...`);
   const result = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', ...args], {

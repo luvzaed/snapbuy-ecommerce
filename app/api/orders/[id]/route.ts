@@ -72,8 +72,10 @@ export async function DELETE(
     const { id } = await params;
     const orderId = Number(id);
     // OrderItem has no cascade delete in the schema — remove items first
-    await prisma.orderItem.deleteMany({ where: { orderId } });
-    await prisma.order.delete({ where: { id: orderId } });
+    await prisma.$transaction([
+      prisma.orderItem.deleteMany({ where: { orderId } }),
+      prisma.order.delete({ where: { id: orderId } }),
+    ]);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting order:", error);

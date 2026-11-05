@@ -4,7 +4,9 @@ import { getAuthenticatedSession } from "@/lib/api-auth";
 
 // Thrown inside the order transaction for stock/validation failures so the
 // catch block can map it to a 400 with a clear message (vs. a generic 500).
-class OrderError extends Error {}
+class OrderError extends Error {
+  constructor(message: string, public status = 400) { super(message); }
+}
 
 // GET /api/orders?userId=X — fetch orders for a user
 // GET /api/orders?all=true — fetch ALL orders (admin)
@@ -162,7 +164,10 @@ export async function POST(req: NextRequest) {
         0
       );
       const tax = subtotal * 0.20;
-      const total = subtotal + tax;
+      const total = Math.round((subtotal + tax) * 100) / 100;
+      if (typeof body.total !== 'number' || !Number.isFinite(body.total) || Math.round(body.total * 100) !== Math.round(total * 100)) {
+        throw new OrderError('Fiyatlar değişmiş olabilir. Sepetiniz güncellendi; lütfen toplamı kontrol edip tekrar onaylayın.', 409);
+      }
 
       // Create order with items using real DB prices
       const created = await tx.order.create({
@@ -218,7 +223,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     // Stock / validation failures: reject the whole order with a clear message
     if (error instanceof OrderError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
     console.error("Error creating order:", error);
     return NextResponse.json(

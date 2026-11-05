@@ -74,12 +74,8 @@ Write-Host 'PostgreSQL is running. Preparing application tables...'
 & node 'scripts\setup-local-db.mjs'
 if ($LASTEXITCODE -ne 0) { throw 'Local database setup failed.' }
 if ($SetupOnly) { return }
-$env:DATABASE_URL = "postgresql://snapbuy_app:$($settings.appPassword)@127.0.0.1:55432/snapbuy_local?schema=public"
-$env:JWT_SECRET = $settings.jwtSecret
-$env:VISUAL_SEARCH_URL = 'http://127.0.0.1:8000'
-$env:VISUAL_SEARCH_REINDEX_TOKEN = $settings.reindexToken
-$env:VISUAL_SEARCH_BIND_HOST = '127.0.0.1'
-Write-Host 'Snapbuy will be available at http://localhost:3000. Keep this window open; Ctrl+C stops the website.'
+# Next.js loads the preserved .env. Do not override customized settings here.
+Write-Host 'Snapbuy will be available at http://127.0.0.1:3000. Keep this window open; Ctrl+C stops the website.'
 Write-Host 'Login instructions are saved in .local\LOGIN.txt.'
 & node 'node_modules\next\dist\bin\next' dev --hostname 127.0.0.1 --port 3000
 if ($LASTEXITCODE -ne 0) { throw 'The website server stopped with an error.' }
