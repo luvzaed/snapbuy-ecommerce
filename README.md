@@ -116,6 +116,10 @@ npm run db:test
 
 The integration checks exercise temporary accounts, privacy, authorization and checkout, then clean up their fixtures. GitHub Actions builds and tests against a separate disposable PostgreSQL database.
 
+CI also checks browser search/cart regressions, session revocation, and the Python visual-search dependencies and concurrent indexing. Python tests mock CLIP inference; use the visual-search setup above to test real image matches.
+
+After updating, startup applies the additive session migration. Existing accounts must sign in again once; product, account and order records are retained. Custom `.env` options are preserved.
+
 For a production build on this computer:
 
 ```powershell

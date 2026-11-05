@@ -10,15 +10,11 @@ import toast from 'react-hot-toast';
 
 function CartItemRow({
   item,
-  liveStock,
 }: {
   item: { product: Product; quantity: number };
-  // Current DB stock for this product. undefined until the live fetch resolves,
-  // in which case we fall back to the (possibly stale) stock stored in the cart.
-  liveStock: number | undefined;
 }) {
   const { removeFromCart, updateQuantity } = useAuth();
-  const stock = liveStock ?? item.product.stock;
+  const stock = item.product.stock;
   const outOfStock = stock === 0;
 
   return (
@@ -101,60 +97,24 @@ function CartItemRow({
 }
 
 export default function CartPage() {
-  const { cart, user, loading, updateQuantity } = useAuth();
+  const { cart, user, loading, refreshCart } = useAuth();
   const router = useRouter();
 
-  // Live (current) DB stock per product id. The cart in localStorage can hold
-  // stale stock, so we re-fetch on load and reconcile each item against it.
-  const [liveStock, setLiveStock] = useState<Record<number, number>>({});
-
+  const [cartVerified, setCartVerified] = useState(false);
+  const [cartError, setCartError] = useState('');
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
-    // Wait for the cart to hydrate from localStorage before reconciling.
-    if (loading || cart.length === 0) return;
-    let cancelled = false;
+    if (loading) return;
+    const controller = new AbortController();
+    refreshCart(controller.signal).then(() => {
+      if (!controller.signal.aborted) { setCartVerified(true); setCartError(''); }
+    }).catch(error => {
+      if (!controller.signal.aborted) setCartError(error.message);
+    });
+    return () => controller.abort();
+  }, [loading, refreshCart, retry]);
 
-    (async () => {
-      try {
-        const res = await fetch('/api/products');
-        if (!res.ok || cancelled) return;
-        const products: Product[] = await res.json();
-        if (cancelled) return;
-
-        const map: Record<number, number> = {};
-        products.forEach((p) => {
-          map[p.id] = p.stock;
-        });
-        setLiveStock(map);
-
-        // Cap any quantity that now exceeds available stock (stock > 0 only;
-        // 0-stock items stay visible and are handled by the OOS badge).
-        cart.forEach((item) => {
-          const stock = map[item.product.id];
-          if (stock === undefined) return;
-          if (stock > 0 && item.quantity > stock) {
-            updateQuantity(item.product.id, stock);
-            toast(
-              `"${item.product.name}" için stok ${stock} adede düştü. Sepetiniz güncellendi.`,
-              { icon: '⚠️' },
-            );
-          }
-        });
-      } catch (err) {
-        console.error('Failed to fetch live stock:', err);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-    // Reconcile once on load; capping mutates the cart but must not re-trigger.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
-  // Any item whose current stock is 0 blocks checkout.
-  const hasOutOfStock = cart.some(
-    (item) => (liveStock[item.product.id] ?? item.product.stock) === 0,
-  );
+  const hasOutOfStock = cart.some(item => item.product.stock === 0);
 
   const subtotal = cart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
@@ -166,6 +126,7 @@ export default function CartPage() {
   // Navigate to the multi-step checkout (shipping → payment → review).
   // The order is placed at the end of the checkout wizard, not here.
   const handleCheckout = () => {
+    if (!cartVerified) { toast.error('Güncel fiyat ve stok bilgilerini kontrol edin.'); return; }
     if (!user) {
       router.push('/login');
       return;
@@ -188,6 +149,7 @@ export default function CartPage() {
         </span>
       </div>
 
+      {cartError && <div role="alert" className="mb-6 text-red-500">{cartError} <button className="underline" onClick={() => setRetry(value => value + 1)}>Tekrar dene</button></div>}
       {cart.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl p-16 text-center">
           <ShoppingBag className="w-16 h-16 text-slate-400 mx-auto mb-4" />
@@ -212,7 +174,6 @@ export default function CartPage() {
               <CartItemRow
                 key={item.product.id}
                 item={item}
-                liveStock={liveStock[item.product.id]}
               />
             ))}
           </div>

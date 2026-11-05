@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
@@ -121,7 +121,9 @@ export default function ProfilePage() {
         setNewPassword('');
         setConfirmPassword('');
         setErrors({});
-        toast.success('Şifre başarıyla değiştirildi!');
+        await logout();
+        toast.success('Şifre değiştirildi. Lütfen yeniden giriş yapın.');
+        router.push('/login');
       } else {
         const data = await res.json();
         if (data.error === 'Current password is incorrect') {

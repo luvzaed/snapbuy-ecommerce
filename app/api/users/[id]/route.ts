@@ -92,10 +92,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
       data.password = await hashPassword(newPassword);
     }
 
-    const updated = await prisma.user.update({
+    const updated = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
       where: { id: targetId },
       data,
       select: { id: true, name: true, email: true, role: true },
+      });
+      if (data.password) await tx.session.deleteMany({ where: { userId: targetId } });
+      return user;
     });
 
     return NextResponse.json(updated);

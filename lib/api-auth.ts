@@ -1,10 +1,12 @@
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'node:crypto';
 import prisma from '@/lib/prisma';
 import type { NextRequest } from 'next/server';
 
 export interface Session {
   id: number;
   role: string; // lowercase, e.g. 'admin' | 'user'
+  sessionId: string;
 }
 
 // HS256 (HMAC-SHA256) keeps a single shared secret. The Edge proxy verifies the
@@ -27,11 +29,18 @@ function getSecret(): string {
 
 // Sign a session into a JWT for the `auth_session` cookie. Only the server,
 // holding JWT_SECRET, can produce a token that getSession() will accept.
-export function signSession(session: Session): string {
-  return jwt.sign({ id: session.id, role: session.role }, getSecret(), {
+export async function signSession(session: Pick<Session, 'id' | 'role'>): Promise<string> {
+  const sessionId = randomUUID();
+  const token = jwt.sign({ id: session.id, role: session.role }, getSecret(), {
     algorithm: JWT_ALG,
     expiresIn: JWT_EXPIRES_IN,
+    jwtid: sessionId,
   });
+  await prisma.$transaction([
+    prisma.session.deleteMany({ where: { userId: session.id, expiresAt: { lte: new Date() } } }),
+    prisma.session.create({ data: { id: sessionId, userId: session.id, expiresAt: new Date(Date.now() + 7 * 86400_000) } }),
+  ]);
+  return token;
 }
 
 // Verify the `auth_session` cookie's signature and return the session claims.
@@ -47,10 +56,11 @@ export function getSession(req: NextRequest): Session | null {
       decoded !== null &&
       Number.isSafeInteger((decoded as jwt.JwtPayload).id) &&
       (decoded as jwt.JwtPayload).id > 0 &&
-      typeof (decoded as jwt.JwtPayload).role === 'string'
+      typeof (decoded as jwt.JwtPayload).role === 'string' &&
+      typeof decoded.jti === 'string' && decoded.jti.length > 0
     ) {
       const payload = decoded as jwt.JwtPayload;
-      return { id: payload.id, role: payload.role };
+      return { id: payload.id, role: payload.role, sessionId: decoded.jti };
     }
     return null;
   } catch {
@@ -69,10 +79,10 @@ export function isAdmin(session: Session | null): boolean {
 export async function getAuthenticatedSession(req: NextRequest): Promise<Session | null> {
   const tokenSession = getSession(req);
   if (!tokenSession) return null;
-  const user = await prisma.user.findUnique({
-    where: { id: tokenSession.id },
-    select: { id: true, role: true },
+  const stored = await prisma.session.findUnique({
+    where: { id: tokenSession.sessionId },
+    select: { userId: true, expiresAt: true, user: { select: { id: true, role: true } } },
   });
-  if (!user) return null;
-  return { id: user.id, role: user.role.toLowerCase() };
+  if (!stored || stored.userId !== tokenSession.id || stored.expiresAt <= new Date()) return null;
+  return { id: stored.user.id, role: stored.user.role.toLowerCase(), sessionId: tokenSession.sessionId };
 }

@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     // Set a signed JWT so the server can verify the session's integrity on
     // every request. The role is baked into the signature, so editing the
     // cookie in the browser invalidates the token instead of granting access.
-    const token = signSession({ id: user.id, role: userData.role });
+    const token = await signSession({ id: user.id, role: userData.role });
     response.cookies.set('auth_session', token, {
       httpOnly: true, // Never expose the signed session token to browser JavaScript
       secure: process.env.NODE_ENV === 'production',

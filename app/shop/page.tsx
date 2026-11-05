@@ -12,18 +12,27 @@ import {
 } from 'lucide-react';
 import AddToCartButton from '@/components/AddToCartButton';
 import { Product } from '@/lib/types';
+import { requestProducts } from '@/lib/cart';
 
 const ITEMS_PER_PAGE = 12;
 
 function ShopContent() {
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const query = params.get('q') || '';
+  const category = params.get('category') || 'Tümü';
+  return <ShopResults key={JSON.stringify([query, category])} initialQuery={query} initialCategory={category} />;
+}
+
+function ShopResults({ initialQuery, initialCategory }: { initialQuery: string; initialCategory: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(['Tümü']);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState(
-    searchParams.get('category') || 'Tümü',
+    initialCategory,
   );
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -34,25 +43,18 @@ function ShopContent() {
   const setCurrentPage = (page: number) => setPageSelection({ key: filterKey, page });
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        setProducts(data);
-
-        const uniqueCategories = Array.from(
-          new Set(data.map((p: Product) => p.category)),
-        ) as string[];
-        setCategories(['Tümü', ...uniqueCategories]);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
+    const controller = new AbortController();
+    requestProducts(controller.signal).then(data => {
+      setProducts(data);
+      setCategories(['Tümü', ...new Set(data.map(p => p.category))]);
+      setLoadError('');
+    }).catch(error => {
+      if (!controller.signal.aborted) setLoadError(error.message);
+    }).finally(() => {
+      if (!controller.signal.aborted) setIsLoading(false);
+    });
+    return () => controller.abort();
+  }, [retry]);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -240,7 +242,12 @@ function ShopContent() {
 
         {/* ── Product grid ─────────────────────────────────────── */}
         <div className="lg:w-3/4">
-          {isLoading ? (
+          {loadError ? (
+            <div role="alert" className="p-8 text-center text-red-500">
+              <p>{loadError}</p>
+              <button className="mt-4 underline" onClick={() => { setIsLoading(true); setLoadError(''); setRetry(value => value + 1); }}>Tekrar dene</button>
+            </div>
+          ) : isLoading ? (
             /* ── Skeleton grid — mirrors real card layout ── */
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (

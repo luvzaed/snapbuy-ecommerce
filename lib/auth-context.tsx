@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, Order, CartItem, Product } from './types';
 import toast from 'react-hot-toast';
+import { addCartItem, readStoredCart, reconcileCart, requestProducts } from './cart';
 
 // Aliases for missing types
 export type AuthOrder = Order;
@@ -18,9 +19,10 @@ interface AuthContextType {
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
+  refreshCart: (signal?: AbortSignal) => Promise<void>;
   cartCount: number;
   fetchOrders: () => Promise<void>;
-  placeOrder: (shipping?: Record<string, unknown>, total?: number) => Promise<string | false>;
+  placeOrder: (shipping?: Record<string, unknown>, total?: number) => Promise<number>;
   isCheckingOut: boolean;
 }
 
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function hydrate() {
       try {
         const storedCart = localStorage.getItem('shop_cart');
-        if (storedCart && active) setCart(JSON.parse(storedCart));
+        if (storedCart && active) setCart(readStoredCart(JSON.parse(storedCart)));
       } catch {
         localStorage.removeItem('shop_cart');
       }
@@ -83,57 +85,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('shop_cart');
   };
 
-  const addToCart = (product: Product, quantity: number = 1) => {
-    const existing = cart.find((item) => item.product.id === product.id);
-    const currentQty = existing ? existing.quantity : 0;
-    // Enforce stock limit: never add more than what's in stock
-    if (currentQty >= product.stock) {
-      toast.error(
-        product.stock > 0
-          ? `Stokta yalnızca ${product.stock} adet var`
-          : 'Bu ürün stokta yok',
-      );
-      return;
-    }
-    // Cap the added quantity at the remaining available stock
-    const addQty = Math.min(quantity, product.stock - currentQty);
-    setCart((prev) => {
-      const ex = prev.find((item) => item.product.id === product.id);
-      const updated = ex
-        ? prev.map((item) =>
-            item.product.id === product.id
-              ? { ...item, quantity: item.quantity + addQty }
-              : item,
-          )
-        : [...prev, { product, quantity: addQty }];
-      localStorage.setItem('shop_cart', JSON.stringify(updated));
-      return updated;
-    });
+  useEffect(() => {
+    if (!loading) localStorage.setItem('shop_cart', JSON.stringify(cart));
+  }, [cart, loading]);
+
+  const refreshCart = useCallback(async (signal?: AbortSignal) => {
+    const products = await requestProducts(signal);
+    if (!signal?.aborted) setCart(previous => reconcileCart(previous, products));
+  }, []);
+
+  const addToCart = (product: Product, quantity = 1) => {
+    if (product.stock === 0) toast.error('Bu ürün stokta yok');
+    setCart(previous => addCartItem(previous, product, quantity));
   };
 
   const removeFromCart = (productId: number) => {
-    setCart((prev) => {
-      const updated = prev.filter((item) => item.product.id !== productId);
-      localStorage.setItem('shop_cart', JSON.stringify(updated));
-      return updated;
-    });
+    setCart(previous => previous.filter(item => item.product.id !== productId));
   };
 
   const updateQuantity = (productId: number, quantity: number) => {
-    setCart((prev) => {
-      if (quantity <= 0) {
-        const updated = prev.filter((item) => item.product.id !== productId);
-        localStorage.setItem('shop_cart', JSON.stringify(updated));
-        return updated;
-      }
-      const updated = prev.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity: Math.min(quantity, item.product.stock) }
-          : item,
-      );
-      localStorage.setItem('shop_cart', JSON.stringify(updated));
-      return updated;
-    });
+    if (!Number.isSafeInteger(quantity)) return;
+    setCart(previous => quantity <= 0 ? previous.filter(item => item.product.id !== productId)
+      : previous.map(item => item.product.id === productId
+        ? { ...item, quantity: Math.max(1, Math.min(quantity, item.product.stock, 100)) } : item));
   };
 
   const fetchOrders = useCallback(async () => {
@@ -167,12 +141,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCart([]);
         localStorage.removeItem('shop_cart');
         await fetchOrders();
-        return data.id || 'ORD-NEW';
+        return data.id as number;
       }
-      return false;
-    } catch (err) {
-      console.error('Failed to place order:', err);
-      return false;
+      if (res.status === 409 || res.status === 400) await refreshCart();
+      const data = await res.json();
+      throw new Error(data.error || 'Sipariş oluşturulamadı. Lütfen tekrar deneyin.');
     } finally {
       setIsCheckingOut(false);
     }
@@ -192,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        refreshCart,
         cartCount,
         fetchOrders,
         placeOrder,

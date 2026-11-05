@@ -13,11 +13,11 @@ Usage:
 Indexing model
 --------------
 The index maps product_id -> CLIP image embedding. It is built from the same
-Postgres/Supabase database the Next.js app uses (so names/categories stay in
+PostgreSQL database the Next.js app uses (so names/categories stay in
 sync) and supports images stored either as remote URLs or as local uploads in
 the Next.js public/ folder. See indexer.py for details.
 
-The index is loaded from embeddings/products.pkl at startup and can be rebuilt
+The index is loaded from embeddings/products.json at startup and can be rebuilt
 at runtime via POST /reindex (which the admin product API calls automatically
 on create/edit/delete), so newly added products become searchable without a
 manual script run or server restart.
@@ -42,8 +42,9 @@ from pydantic import BaseModel
 import indexer
 
 # Fix Windows console encoding for Unicode
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+if __name__ == '__main__':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # -- Config -------------------------------------------------------------------
 TOP_K = 3  # Number of results to return (change this to show more/fewer)
@@ -73,6 +74,8 @@ product_embeddings: dict = {}
 product_ids: list = []
 embedding_matrix: np.ndarray = np.array([])
 _index_lock = threading.Lock()
+# Serialize DB snapshots, builds, persistence and swaps, not just the final swap.
+_reindex_lock = threading.Lock()
 
 
 def _rebuild_matrix(embeddings: dict):
@@ -110,7 +113,7 @@ else:
 _apply_index(_initial)
 
 # -- FastAPI App ---------------------------------------------------------------
-app = FastAPI(title="NexaShop Visual Search", version="1.1.0")
+app = FastAPI(title="Snapbuy Visual Search", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -154,16 +157,16 @@ def reindex(x_reindex_token: str | None = Header(default=None)):
     if not required_token or not x_reindex_token or not secrets.compare_digest(required_token, x_reindex_token):
         raise HTTPException(status_code=403, detail="Unauthorized reindex")
     try:
-        # Snapshot the current embeddings so unchanged products can be reused.
-        with _index_lock:
-            current = dict(product_embeddings)
+        with _reindex_lock:
+            # Snapshot the current embeddings so unchanged products can be reused.
+            with _index_lock:
+                current = dict(product_embeddings)
 
-        embeddings, stats = indexer.build_index(
-            model, preprocess, device, existing=current
-        )
-        indexer.save_index(embeddings)
-        _apply_index(embeddings)
-
+            embeddings, stats = indexer.build_index(
+                model, preprocess, device, existing=current
+            )
+            indexer.save_index(embeddings)
+            _apply_index(embeddings)
         print(
             f"[OK] Reindex complete - in_db={stats['total_in_db']} "
             f"indexed={stats['indexed']} added={stats['added']} "
@@ -173,7 +176,7 @@ def reindex(x_reindex_token: str | None = Header(default=None)):
         return {"status": "ok", **stats}
     except Exception as e:
         print(f"[ERROR] Reindex failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Reindex failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Reindex failed; check the local server log.")
 
 
 @app.post("/search")
@@ -241,8 +244,8 @@ def search_by_image(request: SearchRequest):
         # handles the empty-results case with a Turkish "no match" message).
         return {"results": results}
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing image: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid or unsupported image.")
 
 
 # -- Run Server ----------------------------------------------------------------
