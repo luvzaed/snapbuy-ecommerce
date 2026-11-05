@@ -68,6 +68,10 @@ jobs:
           python -m pip install -r visual-search-server/requirements.txt httpx pip-audit
           python -m pip check
       - name: Audit the complete Python service environment
-        run: python -m pip_audit
+        run: |
+          # Official CPU wheels use +cpu; audit their public release versions
+          # rather than allowing the vulnerability service to skip them.
+          python -m pip list --format=freeze | sed 's/+cpu$//' > /tmp/snapbuy-python-audit.txt
+          python -m pip_audit --no-deps --disable-pip -r /tmp/snapbuy-python-audit.txt
       - name: Verify request handling and concurrent index rebuilds without downloading model weights
         run: python -m unittest discover -s visual-search-server -p 'test_*.py' -v

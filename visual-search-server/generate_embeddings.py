@@ -42,7 +42,7 @@ embeddings, stats = indexer.build_index(model, preprocess, device, existing=None
 indexer.save_index(embeddings)
 
 print(f"\n{'='*50}")
-print(f"[OK] Embeddings saved to embeddings/products.pkl")
+print(f"[OK] Embeddings saved to embeddings/products.json")
 print(f"     Products in DB : {stats['total_in_db']}")
 print(f"     Embedded       : {stats['indexed']}")
 if stats["failed"]:
