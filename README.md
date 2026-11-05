@@ -8,15 +8,21 @@ This edition runs with a database on your own computer. Checkout creates demo or
 
 ### Storefront
 
-![Snapbuy homepage featured product carousel](docs/screenshots/home.jpg)
+![Snapbuy homepage featured product carousel](docs/screenshots/home.png)
 
 ### Product catalogue
 
-![Product catalogue with search, category filters and sorting](docs/screenshots/shop.jpg)
+![Product catalogue with search, category filters and sorting](docs/screenshots/shop.png)
 
 ### Product details
 
-![Product details with pricing, stock and shopping controls](docs/screenshots/product.jpg)
+![Product details with pricing, stock and shopping controls](docs/screenshots/product.png)
+
+### Visual search
+
+| Dark theme · phone search | Light theme · protein search |
+| --- | --- |
+| ![Visual search finding matching phones in dark mode](docs/screenshots/visual-search-dark.png) | ![Visual search finding the matching protein product in light mode](docs/screenshots/visual-search-light.png) |
 
 ## Features
 

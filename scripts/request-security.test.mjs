@@ -27,3 +27,34 @@ test('password verification accepts bcrypt and refuses legacy plaintext values',
   assert.equal(await verifyPassword('wrong', hash), false);
   assert.equal(await verifyPassword('Test-only-password!', 'Test-only-password!'), false);
 });
+
+test('local browser origins follow the actual Host when Next.js normalizes its URL', () => {
+  const request = (url, host, origin, extra = {}) => new Request(`${url}/api/visual-search`, {
+    method: 'POST', headers: { host, origin, 'sec-fetch-site': 'same-origin', ...extra },
+  });
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', '127.0.0.1:3000', 'http://127.0.0.1:3000')), false);
+  assert.equal(rejectCrossSiteMutation(request('http://127.0.0.1:3000', 'localhost:3000', 'http://localhost:3000')), false);
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', '[::1]:3000', 'http://[::1]:3000')), false);
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', '127.0.0.1:3000', 'http://localhost:3000')), true);
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', '127.0.0.1:3000', 'https://attacker.invalid')), true);
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', 'attacker.invalid', 'http://attacker.invalid')), true);
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', '127.0.0.1:4000', 'http://127.0.0.1:4000')), true);
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', '127.0.0.1:3000', 'http://127.0.0.1:3000', { 'sec-fetch-site': 'cross-site' })), true);
+  assert.equal(rejectCrossSiteMutation(request('http://localhost:3000', '127.0.0.1:3000', 'https://attacker.invalid', { 'x-forwarded-host': 'attacker.invalid', 'x-forwarded-proto': 'https' })), true);
+  assert.equal(rejectCrossSiteMutation(request('https://shop.example', 'attacker.invalid', 'https://attacker.invalid')), true);
+});
+
+test('a configured application origin stays authoritative', () => {
+  const previous = process.env.APP_ORIGIN;
+  process.env.APP_ORIGIN = 'https://shop.example';
+  try {
+    const request = origin => new Request('http://localhost:3000/api/visual-search', {
+      method: 'POST', headers: { host: '127.0.0.1:3000', origin, 'sec-fetch-site': 'same-origin' },
+    });
+    assert.equal(rejectCrossSiteMutation(request('https://shop.example')), false);
+    assert.equal(rejectCrossSiteMutation(request('http://127.0.0.1:3000')), true);
+  } finally {
+    if (previous === undefined) delete process.env.APP_ORIGIN;
+    else process.env.APP_ORIGIN = previous;
+  }
+});
