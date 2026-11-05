@@ -33,7 +33,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --audit-level=moderate
       - run: node node_modules/prisma/build/index.js generate
       - run: node node_modules/prisma/build/index.js migrate deploy
       - run: npm run lint
@@ -67,6 +67,7 @@ jobs:
           python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -r visual-search-server/requirements.txt httpx pip-audit
           python -m pip check
+          python -c "import torch, open_clip; print('CPU model runtime imports successfully:', torch.__version__)"
       - name: Audit the complete Python service environment
         run: |
           # Official CPU wheels use +cpu; audit their public release versions

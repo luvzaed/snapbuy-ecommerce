@@ -22,7 +22,7 @@ A scan of tracked files and reachable history found no matching configured signi
 ## Remaining limitations
 
 - Throttling is per process; distributed hosting needs a shared limiter/WAF and trusted proxy configuration.
-- The full development-tool audit still reports moderate minimatch advisories in lint tooling. Production dependency checks gate high/critical findings. No forced, incompatible linter downgrade is applied.
+- A scoped override pins the lint parser's minimatch to patched version 11.0.1. CI audits production and development dependencies at moderate severity and above, and separately audits the installed Python service environment.
 - This demo has no payment gateway, email verification, password recovery or independent penetration-test certification.
 - Remote images and initial CLIP downloads need internet. CI tests Python request handling and concurrent indexing with mocked model inference; real CLIP matching still needs a local smoke test.
 - Local backups contain personal records and password hashes. Keep them private and make consistent PostgreSQL backups. Do not delete the database directory to troubleshoot.
